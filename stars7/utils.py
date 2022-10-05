@@ -1,5 +1,5 @@
 
-def coordinates_to_str(list1):
+def list_to_str(list1):
     return ' '.join([str(c) for c in list1])
 
 
