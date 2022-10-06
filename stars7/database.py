@@ -7,7 +7,7 @@ from abc import abstractmethod, ABCMeta
 
 class Database(metaclass=ABCMeta):
 
-    def __init__(self) -> None:
+    def refresh(self):
         data_row = self.fetch()
         self.update(data_row)
 
@@ -16,22 +16,22 @@ class Database(metaclass=ABCMeta):
         pass
 
     def update(self, data_row):
-        with open(settings.data_path, 'w') as file:
+        with open(settings.DATA_PATH, 'w') as file:
             writer = csv.writer(file)
-            writer.writerow(settings.csv_headers)
+            writer.writerow(settings.CSV_HEADERS)
             writer.writerows(data_row)
 
 
 class SportDatabase(Database):
 
     def fetch(self) -> list:
-
         total_page = 100
         page_num = 1
         page_size = 30
         max_total = 250
         idx = 1
-        url_tpl = """https://webapi.sporttery.cn/gateway/lottery/getHistoryPageListV1.qry?gameNo=04&provinceId=0&pageNo={}&pageSize={}&isVerify=1"""
+        url_tpl = """https://webapi.sporttery.cn/gateway/lottery/getHistoryPageListV1.qry
+                    ?gameNo=04&provinceId=0&pageNo={}&pageSize={}&isVerify=1"""
 
         data_row = []
         while page_num <= total_page:
@@ -60,3 +60,4 @@ class SportDatabase(Database):
 
 if __name__ == '__main__':
     db = SportDatabase()
+    db.refresh()

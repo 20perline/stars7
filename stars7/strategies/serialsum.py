@@ -12,7 +12,7 @@ class SerialSumStrategy(MultiRoundsStrategy):
         all_same = self._list_the_same(sum_list)
         if all_same:
             return True
-        if len(round_list) >= 3:
+        if len(round_list) >= 2:
             even_list = [x for i, x in enumerate(sum_list) if i % 2 == 0]
             odd_list = [x for i, x in enumerate(sum_list) if i % 2 != 0]
             return self._list_the_same(even_list) and self._list_the_same(odd_list)

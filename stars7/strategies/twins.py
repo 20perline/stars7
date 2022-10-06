@@ -1,7 +1,7 @@
 from stars7.strategies import MultiRoundsStrategy
 from stars7.round import Round
 from stars7.rectangle import Rectangle
-from stars7.utils import list_to_str
+# from stars7.utils import list_to_str
 from typing import List
 
 

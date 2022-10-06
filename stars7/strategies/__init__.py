@@ -1,6 +1,7 @@
 from itertools import combinations
 from stars7.coordinate import Coordinate
 from stars7.rectangle import Rectangle
+from stars7.render import Render
 from stars7.round import Round
 from stars7.feed import Feed
 from stars7 import utils
@@ -36,8 +37,11 @@ class Strategy(metaclass=ABCMeta):
     def execute(self, feed: Feed):
         name = self.get_name()
         print(name, ' started')
+        render = Render(feed)
         for points in self.points_generator():
-            self.execute_for_points(feed, points)
+            round_list = self.execute_for_points(feed, points)
+            if round_list is not None:
+                render.save(round_list=round_list)
         print(name, ' stopped')
 
     @abstractmethod
@@ -90,6 +94,7 @@ class SingleRoundStrategy(Strategy, metaclass=ABCMeta):
 
         if round_idx >= self.works_at_least:
             print('found pattern: ', utils.list_to_str(round_list))
+            return round_list
 
     @abstractmethod
     def verify(self, round: Round):
@@ -133,10 +138,11 @@ class MultiRoundsStrategy(Strategy, metaclass=ABCMeta):
             round_list.append(round)
 
         if len(round_list) < self.works_at_least:
-            return False
+            return None
         res = self.verify(round_list=round_list)
         if res:
             print('found pattern: ', utils.list_to_str(round_list))
+            return round_list
 
     @abstractmethod
     def verify(self, round: Round):
