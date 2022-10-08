@@ -30,13 +30,15 @@ class SportDatabase(Database):
         page_size = 30
         max_total = 250
         idx = 1
-        url_tpl = """https://webapi.sporttery.cn/gateway/lottery/getHistoryPageListV1.qry
-                    ?gameNo=04&provinceId=0&pageNo={}&pageSize={}&isVerify=1"""
-
+        url_tpl = """https://webapi.sporttery.cn/gateway/lottery/getHistoryPageListV1.qry?gameNo=04&provinceId=0&pageNo={}&pageSize={}&isVerify=1"""
+        headers = {
+            "content-type": "application/json",
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36 Edg/106.0.1370.34"
+        }
         data_row = []
         while page_num <= total_page:
             url = url_tpl.format(page_num, page_size)
-            resp = requests.get(url=url)
+            resp = requests.get(url=url, headers=headers)
             data = resp.json()
             val = data['value']
             total_page = val['pages']
