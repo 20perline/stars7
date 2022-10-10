@@ -55,13 +55,13 @@ class Render(object):
             else:
                 draw.line([start, end], fill=black_color, width=line_width)
 
-        split_row = self.feed.split_row
+        first_split_row = self.feed.first_split_row
         # 横线
         for i in range(settings.TABLE_ROWS+1):
             y_axis = img_height - settings.V_PADDING - cell_len * i
             start = (0, y_axis)
             end = (img_width, y_axis)
-            first_bold = (split_row + 1) % 4
+            first_bold = (first_split_row + 1) % 4
             if i == first_bold or (i - first_bold) % 4 == 0:
                 draw.line([start, end], fill=red_color, width=line_width * 3)
             else:

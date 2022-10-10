@@ -10,12 +10,12 @@ class Feed(object):
         # self.star7_data = pd.read_csv(settings.data_path, skiprows=range(1, 5))
         self.star7_data = pd.read_csv(settings.DATA_PATH)
         self.next_num = self.star7_data.at[0, 'num'] + 1
-        self.split_row = 0
+        self.first_split_row = 0
         for i in range(4):
             if self.star7_data.at[i, 'num'] % 4 == 0:
-                self.split_row = i
+                self.first_split_row = i
                 break
-        print(self.split_row)
+        # print(self.first_split_row)
         self.df = self.star7_data[settings.COL_NAMES]
         print(self.df.head(15))
 

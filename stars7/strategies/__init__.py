@@ -138,7 +138,7 @@ class MultiRoundsStrategy(Strategy, metaclass=ABCMeta):
             return None
         works_cnt = self.verify(round_list=round_list)
         if works_cnt >= self.works_at_least:
-            print('found pattern: ', works_cnt, utils.list_to_str(round_list))
+            print('found pattern works for', works_cnt, 'rounds: ', utils.list_to_str(round_list))
             return round_list[:works_cnt]
 
     @abstractmethod
