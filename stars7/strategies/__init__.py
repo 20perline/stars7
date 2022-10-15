@@ -5,13 +5,17 @@ from stars7.render import Render
 from stars7.round import Round
 from stars7.feed import Feed
 from stars7 import utils
+from loguru import logger
 from abc import abstractmethod, ABCMeta
 from typing import List
 
 
 class Strategy(metaclass=ABCMeta):
-
-    def __init__(self, rect: Rectangle, offset=0, elements=1, works_at_least=2) -> None:
+    def __init__(self,
+                 rect: Rectangle,
+                 offset=0,
+                 elements=1,
+                 works_at_least=2) -> None:
         if offset < 0:
             raise Exception('offset can not be less than 0')
         self.rect = rect
@@ -35,14 +39,11 @@ class Strategy(metaclass=ABCMeta):
         pass
 
     def execute(self, feed: Feed):
-        name = self.get_name()
-        print(name, ' started')
         render = Render(feed)
         for points in self.points_generator():
             round_list = self.execute_for_points(feed, points)
             if round_list is not None:
                 render.save(round_list=round_list)
-        print(name, ' stopped')
 
     @abstractmethod
     def execute_for_points(self, feed: Feed, points):
@@ -50,8 +51,12 @@ class Strategy(metaclass=ABCMeta):
 
 
 class SingleRoundStrategy(Strategy, metaclass=ABCMeta):
-
-    def __init__(self, rect: Rectangle, offset=0, pos=1, elements=1, works_at_least=2) -> None:
+    def __init__(self,
+                 rect: Rectangle,
+                 offset=0,
+                 pos=1,
+                 elements=1,
+                 works_at_least=2) -> None:
         self.rect = rect
         self.offset = offset
         self.pos = pos
@@ -60,7 +65,8 @@ class SingleRoundStrategy(Strategy, metaclass=ABCMeta):
         self.max_execute_round = 10
 
     def next_round_pos(self, round_num) -> Coordinate:
-        return Coordinate(row=self.offset + self.rect.rows * (round_num - 1), col='c{}'.format(self.pos))
+        return Coordinate(row=self.offset + self.rect.rows * (round_num - 1),
+                          col='c{}'.format(self.pos))
 
     def next_round_coord(self, points, round_num) -> List[Coordinate]:
         rect_cols = self.rect.cols
@@ -92,7 +98,7 @@ class SingleRoundStrategy(Strategy, metaclass=ABCMeta):
             round_idx = round_num
 
         if round_idx >= self.works_at_least:
-            print('found pattern: ', utils.list_to_str(round_list))
+            logger.info('found pattern: {round_list}', round_list=utils.list_to_str(round_list))
             return round_list
 
     @abstractmethod
@@ -101,8 +107,12 @@ class SingleRoundStrategy(Strategy, metaclass=ABCMeta):
 
 
 class MultiRoundsStrategy(Strategy, metaclass=ABCMeta):
-
-    def __init__(self, rect: Rectangle, column_offset=0, offset=0, elements=1, works_at_least=2) -> None:
+    def __init__(self,
+                 rect: Rectangle,
+                 column_offset=0,
+                 offset=0,
+                 elements=1,
+                 works_at_least=2) -> None:
         self.rect = rect
         self.offset = offset
         # 是否跟随偏移纵轴
@@ -138,7 +148,11 @@ class MultiRoundsStrategy(Strategy, metaclass=ABCMeta):
             return None
         works_cnt = self.verify(round_list=round_list)
         if works_cnt >= self.works_at_least:
-            print('found pattern works for', works_cnt, 'rounds: ', utils.list_to_str(round_list))
+            logger.info(
+                "found {strategy} works for {works_cnt} times: \n{round_list}",
+                strategy=self.get_name(),
+                works_cnt=works_cnt,
+                round_list=utils.list_to_str(round_list[:works_cnt], join_str="\n"))
             return round_list[:works_cnt]
 
     @abstractmethod

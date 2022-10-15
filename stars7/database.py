@@ -1,15 +1,29 @@
 # download data from the internet
 import requests
 import csv
-import settings
+import os
+from loguru import logger
+from stars7 import settings, utils
 from abc import abstractmethod, ABCMeta
 
 
 class Database(metaclass=ABCMeta):
 
     def refresh(self):
+        last_draw_day = utils.get_last_draw_day()
+        first_row_day = None
+        if os.path.exists(settings.DATA_PATH):
+            with open(settings.DATA_PATH, 'r') as file:
+                reader = csv.DictReader(file)
+                first_row_day = next(reader)['day']
+        if first_row_day == last_draw_day:
+            logger.info("database was already up to date {day}", day=last_draw_day)
+            return
         data_row = self.fetch()
-        self.update(data_row)
+        if len(data_row) > 0:
+            self.update(data_row)
+        else:
+            logger.warning('no data fetched, database updating aborted')
 
     @abstractmethod
     def fetch(self) -> list:
@@ -25,22 +39,31 @@ class Database(metaclass=ABCMeta):
 class SportDatabase(Database):
 
     def fetch(self) -> list:
+        logger.info('start to download data from from https://www.lottery.gov.cn')
         total_page = 100
         page_num = 1
-        page_size = 30
         max_total = 250
         idx = 1
-        url_tpl = """https://webapi.sporttery.cn/gateway/lottery/getHistoryPageListV1.qry?gameNo=04&provinceId=0&pageNo={}&pageSize={}&isVerify=1"""
+        url = "https://webapi.sporttery.cn/gateway/lottery/getHistoryPageListV1.qry"
+        payload = {
+            "gameNo": "04",
+            "provinceId": "0",
+            "isVerify": 1,
+            "pageNo": 1,
+            "pageSize": 30
+        }
         headers = {
             "content-type": "application/json",
-            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36 Edg/106.0.1370.34"
+            "user-agent": "stars7 engine"
         }
         data_row = []
         while page_num <= total_page:
-            url = url_tpl.format(page_num, page_size)
-            resp = requests.get(url=url, headers=headers)
+            payload['pageNo'] = page_num
+            resp = requests.get(url, params=payload, headers=headers)
             data = resp.json()
             val = data['value']
+            if val['total'] == 0:
+                return data_row
             total_page = val['pages']
             for l1 in val['list']:
                 a = [l1['lotteryDrawTime'], l1['lotteryDrawNum']]
@@ -52,14 +75,9 @@ class SportDatabase(Database):
                 data_row.append(a)
                 idx += 1
             if idx >= max_total:
-                print('total rows reach maximum {}'.format(max_total))
+                logger.info('total rows reach maximum {}'.format(max_total))
                 break
-            print('download page {} done.'.format(page_num))
+            logger.info('download page {} done.'.format(resp.url))
             page_num += 1
-
+        logger.info('download data end')
         return data_row
-
-
-if __name__ == '__main__':
-    db = SportDatabase()
-    db.refresh()

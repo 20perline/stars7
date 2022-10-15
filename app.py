@@ -1,7 +1,11 @@
 from stars7.rectangle import Rectangle
 from stars7.feed import Feed
 from stars7.strategies import even, serialsum, single, twins
+from stars7.database import SportDatabase
 
+
+db = SportDatabase()
+db.refresh()
 
 feed1 = Feed()
 rect1 = Rectangle(start_col=1, rows=4, cols=5)

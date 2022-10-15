@@ -8,12 +8,13 @@ DATA_PATH = ROOT_DIR + '/data/dat.csv'
 BG_PATH = ROOT_DIR + '/data/bg.png'
 
 # image settings
+RENDER_ON = False
 H_PADDING = 20
 V_PADDING = 20
 # 边长
 CELL_LEN = 50
 CELL_HALF_LEN = CELL_LEN / 2
-TABLE_ROWS = 30
+TABLE_ROWS = 20
 TABLE_COLS = len(COL_NAMES)
 LINE_WIDTH = 1
 RADIUS = 12

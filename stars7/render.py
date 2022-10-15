@@ -13,7 +13,8 @@ class Render(object):
         self._draw_background()
 
     def save(self, round_list: List[Round]):
-        # return False
+        if not settings.RENDER_ON:
+            return False
         bg_path = settings.BG_PATH
         if not os.path.exists(bg_path):
             return False
