@@ -22,7 +22,7 @@ class SingleSameStrategy(AssociatedRoundsStrategy):
                 return i - 1
         return 0
 
-    def predict(self, round_list: List[Round]):
+    def predict(self, predict_index: int, round_list: List[Round]):
         predict_val = round_list[1].values[0]
         round_list[0].values[0] = predict_val
 
@@ -42,7 +42,7 @@ class SingleDecreaseStrategy(SingleSameStrategy):
                 return i - 1
         return 0
 
-    def predict(self, round_list: List[Round]):
+    def predict(self, predict_index: int, round_list: List[Round]):
         predict_val = round_list[1].values[0]
         round_list[0].values[0] = predict_val - 1
 
@@ -62,6 +62,6 @@ class SingleIncreaseStrategy(SingleSameStrategy):
                 return i - 1
         return 0
 
-    def predict(self, round_list: List[Round]):
+    def predict(self, predict_index: int, round_list: List[Round]):
         predict_val = round_list[1].values[0]
         round_list[0].values[0] = predict_val + 1

@@ -24,13 +24,14 @@ engine.add_strategy(strategy6)
 strategy4 = even.AlternatedSumStrategy(rect=rect1, offset=offset, works_at_least=3)
 engine.add_strategy(strategy4)
 
-for column_offset in range(-1, 2):
-    strategy21 = single.SingleSameStrategy(rect=rect1, offset=offset, column_offset=column_offset, works_at_least=3)
-    strategy22 = single.SingleIncreaseStrategy(rect=rect1, offset=offset, column_offset=column_offset, works_at_least=3)
-    strategy23 = single.SingleDecreaseStrategy(rect=rect1, offset=offset, column_offset=column_offset, works_at_least=3)
+# for column_offset in range(-1, 2):
+#     strategy21 = single.SingleSameStrategy(rect=rect1, offset=offset, column_offset=column_offset, works_at_least=3)
+#     strategy22 = single.SingleIncreaseStrategy(rect=rect1, offset=offset, column_offset=column_offset, works_at_least=3)
+#     strategy23 = single.SingleDecreaseStrategy(rect=rect1, offset=offset, column_offset=column_offset, works_at_least=3)
 
-    engine.add_strategy(strategy21)
-    engine.add_strategy(strategy22)
-    engine.add_strategy(strategy23)
+#     engine.add_strategy(strategy21)
+#     engine.add_strategy(strategy22)
+#     engine.add_strategy(strategy23)
 
 engine.execute()
+# engine.analyze()

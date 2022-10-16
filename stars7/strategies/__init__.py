@@ -29,7 +29,7 @@ class Strategy(metaclass=ABCMeta):
         return self.__class__.__name__
 
     @abstractmethod
-    def predict(self, round_list: List[Round]):
+    def predict(self, predict_index: int, round_list: List[Round]):
         pass
 
     @abstractmethod
@@ -62,6 +62,7 @@ class Strategy(metaclass=ABCMeta):
                 continue
             zero_round_coords = [Coordinate(row=coord.row - self.rect.rows, col=coord.col) for coord in round_list[0].coordinates]
 
+            # make sure there's only one position in prediction row
             if len([c.row for c in zero_round_coords if c.row < -1]) > 0:
                 predictable = False
             elif len([c.row for c in zero_round_coords if c.row == -1]) == 1:
@@ -69,15 +70,28 @@ class Strategy(metaclass=ABCMeta):
             else:
                 predictable = False
 
+            predict_index = None
+            predict_success = False
             if predictable:
+                predict_index = [i for i, c in enumerate(zero_round_coords) if c.row == -1][0]
                 zero_round_values = feed.get_values(zero_round_coords)
-                round_list.insert(0, Round(round_num=0, coordinates=zero_round_coords, values=zero_round_values))
-                self.predict(round_list)
+                round_list.insert(0, Round(round_num=0, coordinates=zero_round_coords, offset=offset, values=zero_round_values))
+                self.predict(predict_index, round_list)
+                predict_value = round_list[0].values[predict_index]
+                actual_value = feed.get_next_value_at(predict_index)
+                logger.debug("predict value {val1}, actual value {val2} compare {res}", val1=predict_value, val2=actual_value, res=(actual_value == predict_value))
+                if actual_value is not None and actual_value == predict_value:
+                    predict_success = True
 
             name = '{}-E{}O{}-R{}C{}'.format(self.get_name(), len(points), offset, self.rect.rows, self.rect.cols)
             signature = '{}-P{}'.format(name, utils.list_to_str(points, join_str=''))
-            self.pattern_counter[signature] += 1
-            yield Pattern(index=self.pattern_counter[signature], name=name, signature=signature, predictable=predictable, round_list=round_list)
+            self.pattern_counter[name] += 1
+            yield Pattern(index=self.pattern_counter[name],
+                          name=name,
+                          signature=signature,
+                          predictable=predictable,
+                          predict_success=predict_success,
+                          round_list=round_list)
 
 
 class AssociatedRoundsStrategy(Strategy, metaclass=ABCMeta):
@@ -114,14 +128,14 @@ class AssociatedRoundsStrategy(Strategy, metaclass=ABCMeta):
             if len(coord_list) != len(points):
                 break
             values = feed.get_values(coord_list)
-            round = Round(round_num=round_num, coordinates=coord_list, values=values)
+            round = Round(round_num=round_num, coordinates=coord_list, offset=offset, values=values)
             round_list.append(round)
 
         if len(round_list) < self.works_at_least:
             return None
         works_cnt = self.verify(round_list=round_list)
         if works_cnt >= self.works_at_least:
-            logger.info(
+            logger.trace(
                 "found {strategy} works for {works_cnt} times: \n{round_list}",
                 strategy=self.get_name(),
                 works_cnt=works_cnt,

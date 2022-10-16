@@ -4,6 +4,7 @@ from stars7.strategies import AssociatedRoundsStrategy
 from stars7 import utils
 from collections import Counter
 from typing import List
+from loguru import logger
 
 
 class EqualSumStrategy(AssociatedRoundsStrategy):
@@ -17,12 +18,18 @@ class EqualSumStrategy(AssociatedRoundsStrategy):
                 return i - 1
         return 0
 
-    def predict(self, round_list: List[Round]):
+    def predict(self, predict_index: int, round_list: List[Round]):
         sum_val = sum(round_list[1].values)
         zero_round_values = round_list[0].values
         current_sum = sum([v for v in zero_round_values if v != '?'])
-        predict_val = abs(sum_val - current_sum) % 10
-        zero_round_values[zero_round_values.index('?')] = predict_val
+        predict_val = (utils.next_greater_than(sum_val, current_sum) - current_sum) % 10
+
+        logger.debug(
+            "predict index {index}, predict value {val}, rounds:\n{rounds}",
+            index=predict_index,
+            val=predict_val,
+            rounds=utils.list_to_str(round_list, join_str="\n"))
+        zero_round_values[predict_index] = predict_val
 
 
 class OddEvenSumStrategy(AssociatedRoundsStrategy):
@@ -42,7 +49,7 @@ class OddEvenSumStrategy(AssociatedRoundsStrategy):
                 return i - 1
         return 0
 
-    def predict(self, round_list: List[Round]):
+    def predict(self, predict_index: int, round_list: List[Round]):
         if len(round_list) != 5:
             return None
         sum_list = [sum(c.values) % 10 for i, c in enumerate(round_list) if i > 0]
@@ -53,5 +60,11 @@ class OddEvenSumStrategy(AssociatedRoundsStrategy):
         next_sum = diff[0]
         zero_round_values = round_list[0].values
         current_sum = sum([v for v in zero_round_values if v != '?'])
-        predict_val = abs(next_sum - current_sum) % 10
-        zero_round_values[zero_round_values.index('?')] = predict_val
+        predict_val = (utils.next_greater_than(next_sum, current_sum) - current_sum) % 10
+
+        logger.debug(
+            "predict index {index}, predict value {val}, rounds:\n{rounds}",
+            index=predict_index,
+            val=predict_val,
+            rounds=utils.list_to_str(round_list, join_str="\n"))
+        zero_round_values[predict_index] = predict_val

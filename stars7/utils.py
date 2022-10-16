@@ -49,6 +49,15 @@ def random_str(len):
     return ''.join(random.choice(letters) for i in range(len))
 
 
+def next_greater_than(a, b):
+    for i in range(10):
+        a1 = a + i * 10
+        if a1 > b:
+            return a1
+
+
 if __name__ == '__main__':
-    day = get_last_draw_day()
-    print(day)
+    # day = get_last_draw_day()
+    # print(day)
+    a = next_greater_than(9, 6)
+    print(a)
