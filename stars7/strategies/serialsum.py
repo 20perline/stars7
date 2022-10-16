@@ -1,12 +1,12 @@
 # 每轮之和成某种序列
 from stars7.round import Round
-from stars7.strategies import MultiRoundsStrategy
+from stars7.strategies import AssociatedRoundsStrategy
 from stars7 import utils
 from collections import Counter
 from typing import List
 
 
-class EqualSumStrategy(MultiRoundsStrategy):
+class EqualSumStrategy(AssociatedRoundsStrategy):
     """合数相同"""
 
     def verify(self, round_list: List[Round]):
@@ -17,8 +17,15 @@ class EqualSumStrategy(MultiRoundsStrategy):
                 return i - 1
         return 0
 
+    def predict(self, round_list: List[Round]):
+        sum_val = sum(round_list[1].values)
+        zero_round_values = round_list[0].values
+        current_sum = sum([v for v in zero_round_values if v != '?'])
+        predict_val = abs(sum_val - current_sum) % 10
+        zero_round_values[zero_round_values.index('?')] = predict_val
 
-class OddEvenSumStrategy(MultiRoundsStrategy):
+
+class OddEvenSumStrategy(AssociatedRoundsStrategy):
     """合数全奇或全偶且各不相同"""
 
     def verify(self, round_list: List[Round]):
@@ -34,3 +41,17 @@ class OddEvenSumStrategy(MultiRoundsStrategy):
             else:
                 return i - 1
         return 0
+
+    def predict(self, round_list: List[Round]):
+        if len(round_list) != 5:
+            return None
+        sum_list = [sum(c.values) % 10 for i, c in enumerate(round_list) if i > 0]
+        a = [0, 2, 4, 6, 8]
+        if sum_list[0] % 2 != 0:
+            a = [1, 3, 5, 7, 9]
+        diff = [x for x in a if x not in set(sum_list)]
+        next_sum = diff[0]
+        zero_round_values = round_list[0].values
+        current_sum = sum([v for v in zero_round_values if v != '?'])
+        predict_val = abs(next_sum - current_sum) % 10
+        zero_round_values[zero_round_values.index('?')] = predict_val

@@ -1,144 +1,117 @@
 from itertools import combinations
 from stars7.coordinate import Coordinate
 from stars7.rectangle import Rectangle
-from stars7.render import Render
 from stars7.round import Round
 from stars7.feed import Feed
+from stars7.pattern import Pattern
 from stars7 import utils
 from loguru import logger
 from abc import abstractmethod, ABCMeta
-from typing import List
+from typing import List, Iterator, Sequence
+from collections import defaultdict
 
 
 class Strategy(metaclass=ABCMeta):
     def __init__(self,
                  rect: Rectangle,
-                 offset=0,
-                 elements=1,
-                 works_at_least=2) -> None:
-        if offset < 0:
-            raise Exception('offset can not be less than 0')
+                 offset: Sequence[int],
+                 elements: Sequence[int],
+                 works_at_least=2
+                 ) -> None:
         self.rect = rect
         self.offset = offset
         self.elements = elements
         self.works_at_least = works_at_least
         self.max_execute_round = 10
+        self.pattern_counter = defaultdict(int)
 
     def get_name(self):
         return self.__class__.__name__
+
+    @abstractmethod
+    def predict(self, round_list: List[Round]):
+        pass
+
+    @abstractmethod
+    def next_round_coord(self, offset, points, round_num) -> List[Coordinate]:
+        pass
+
+    @abstractmethod
+    def execute_for_points(self, offset, points, feed: Feed) -> List[Round]:
+        pass
+
+    def execute(self, feed: Feed) -> Iterator[Pattern]:
+        for offset in self.offset:
+            if offset < 0:
+                continue
+            for pattern in self._execute_for_offset(offset, feed):
+                yield pattern
 
     def points_generator(self):
         rect_rows = self.rect.rows
         rect_cols = self.rect.cols
         total_idx = rect_rows * rect_cols
-        for points in combinations(range(total_idx), self.elements):
-            yield points
+        for elements in self.elements:
+            for points in combinations(range(total_idx), elements):
+                yield points
 
-    @abstractmethod
-    def next_round_coord(self, rect_indexes, round_num) -> List[Coordinate]:
-        pass
-
-    def execute(self, feed: Feed):
-        render = Render(feed)
+    def _execute_for_offset(self, offset, feed: Feed):
         for points in self.points_generator():
-            round_list = self.execute_for_points(feed, points)
-            if round_list is not None:
-                render.save(round_list=round_list)
+            round_list = self.execute_for_points(offset, points, feed)
+            if round_list is None:
+                continue
+            zero_round_coords = [Coordinate(row=coord.row - self.rect.rows, col=coord.col) for coord in round_list[0].coordinates]
 
-    @abstractmethod
-    def execute_for_points(self, feed: Feed, points):
-        pass
-
-
-class SingleRoundStrategy(Strategy, metaclass=ABCMeta):
-    def __init__(self,
-                 rect: Rectangle,
-                 offset=0,
-                 pos=1,
-                 elements=1,
-                 works_at_least=2) -> None:
-        self.rect = rect
-        self.offset = offset
-        self.pos = pos
-        self.elements = elements
-        self.works_at_least = works_at_least
-        self.max_execute_round = 10
-
-    def next_round_pos(self, round_num) -> Coordinate:
-        return Coordinate(row=self.offset + self.rect.rows * (round_num - 1),
-                          col='c{}'.format(self.pos))
-
-    def next_round_coord(self, points, round_num) -> List[Coordinate]:
-        rect_cols = self.rect.cols
-        coord = []
-        for point in points:
-            row = self.offset + self.rect.rows * (round_num - 1) + 1 + point // rect_cols
-            col = self.rect.start_col + point % rect_cols
-            coord.append(Coordinate(row=row, col='c{}'.format(col)))
-        return coord
-
-    def execute_for_points(self, feed: Feed, points):
-        round_idx = 0
-        round_list = []
-        for round_num in range(1, self.max_execute_round):
-            coord_list = []
-            pos_coord = self.next_round_pos(round_num=round_num)
-            coord_list.append(pos_coord)
-            for coord in self.next_round_coord(points, round_num=round_num):
-                coord_list.append(coord)
-            if len(coord_list) == 1:
-                break
-            values = feed.get_values(coord_list)
-            round = Round(round_num=round_num, coordinates=coord_list, values=values)
-            res = self.verify(round=round)
-            if not res:
-                break
+            if len([c.row for c in zero_round_coords if c.row < -1]) > 0:
+                predictable = False
+            elif len([c.row for c in zero_round_coords if c.row == -1]) == 1:
+                predictable = True
             else:
-                round_list.append(round)
-            round_idx = round_num
+                predictable = False
 
-        if round_idx >= self.works_at_least:
-            logger.info('found pattern: {round_list}', round_list=utils.list_to_str(round_list))
-            return round_list
+            if predictable:
+                zero_round_values = feed.get_values(zero_round_coords)
+                round_list.insert(0, Round(round_num=0, coordinates=zero_round_coords, values=zero_round_values))
+                self.predict(round_list)
 
-    @abstractmethod
-    def verify(self, round: Round):
-        pass
+            name = '{}-E{}O{}-R{}C{}'.format(self.get_name(), len(points), offset, self.rect.rows, self.rect.cols)
+            signature = '{}-P{}'.format(name, utils.list_to_str(points, join_str=''))
+            self.pattern_counter[signature] += 1
+            yield Pattern(index=self.pattern_counter[signature], name=name, signature=signature, predictable=predictable, round_list=round_list)
 
 
-class MultiRoundsStrategy(Strategy, metaclass=ABCMeta):
+class AssociatedRoundsStrategy(Strategy, metaclass=ABCMeta):
+    """Rounds之间有关系的"""
+
     def __init__(self,
                  rect: Rectangle,
-                 column_offset=0,
-                 offset=0,
-                 elements=1,
+                 offset,
+                 elements,
+                 column_offset: int = 0,
                  works_at_least=2) -> None:
-        self.rect = rect
-        self.offset = offset
+        super().__init__(rect=rect, offset=offset, elements=elements, works_at_least=works_at_least)
         # 是否跟随偏移纵轴
         self.column_offset = column_offset
-        self.elements = elements
-        self.works_at_least = works_at_least
         self.max_execute_round = 10
 
-    def next_round_coord(self, points, round_num) -> List[Coordinate]:
+    def next_round_coord(self, offset, points, round_num) -> List[Coordinate]:
         rect_cols = self.rect.cols
         coord = []
         for point in points:
-            row = self.offset + self.rect.rows * (round_num - 1) + point // rect_cols
+            row = offset + self.rect.rows * (round_num - 1) + point // rect_cols
             col = self.rect.start_col + point % rect_cols + self.column_offset * (round_num - 1)
             if col < self.rect.start_col or col > self.rect.start_col + self.rect.cols:
                 break
             coord.append(Coordinate(row=row, col='c{}'.format(col)))
         return coord
 
-    def execute_for_points(self, feed: Feed, points):
+    def execute_for_points(self, offset, points, feed: Feed):
         round_list = []
         for round_num in range(1, self.max_execute_round + 1):
             coord_list = []
-            for coord in self.next_round_coord(points, round_num=round_num):
+            for coord in self.next_round_coord(offset, points, round_num=round_num):
                 coord_list.append(coord)
-            if len(coord_list) != self.elements:
+            if len(coord_list) != len(points):
                 break
             values = feed.get_values(coord_list)
             round = Round(round_num=round_num, coordinates=coord_list, values=values)
@@ -156,5 +129,5 @@ class MultiRoundsStrategy(Strategy, metaclass=ABCMeta):
             return round_list[:works_cnt]
 
     @abstractmethod
-    def verify(self, round: Round):
+    def verify(self, round_list: List[Round]):
         pass

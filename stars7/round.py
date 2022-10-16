@@ -1,9 +1,11 @@
+from stars7.coordinate import Coordinate
 from stars7 import utils
+from typing import List
 
 
 class Round(object):
 
-    def __init__(self, round_num, coordinates, values, last_values=None) -> None:
+    def __init__(self, round_num: int, coordinates: List[Coordinate], values: List[int], last_values=None) -> None:
         self.round_num = round_num
         self.coordinates = coordinates
         self.values = values

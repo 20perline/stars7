@@ -1,16 +1,16 @@
 # 单点
 from stars7.rectangle import Rectangle
 from stars7.round import Round
-from stars7.strategies import MultiRoundsStrategy
+from stars7.strategies import AssociatedRoundsStrategy
 from stars7 import utils
 from typing import List
 
 
-class SingleSameStrategy(MultiRoundsStrategy):
+class SingleSameStrategy(AssociatedRoundsStrategy):
     """单个数 坚或斜着 重复"""
 
-    def __init__(self, rect: Rectangle, offset=0, column_offset=0, works_at_least=2) -> None:
-        super().__init__(rect=rect, offset=offset, column_offset=column_offset, elements=1, works_at_least=works_at_least)
+    def __init__(self, rect: Rectangle, offset, column_offset, works_at_least=2) -> None:
+        super().__init__(rect=rect, offset=offset, column_offset=column_offset, elements=[1], works_at_least=works_at_least)
 
     def verify(self, round_list: List[Round]):
         sum_list = [c.values[0] for c in round_list]
@@ -21,6 +21,10 @@ class SingleSameStrategy(MultiRoundsStrategy):
             else:
                 return i - 1
         return 0
+
+    def predict(self, round_list: List[Round]):
+        predict_val = round_list[1].values[0]
+        round_list[0].values[0] = predict_val
 
 
 class SingleDecreaseStrategy(SingleSameStrategy):
@@ -38,6 +42,10 @@ class SingleDecreaseStrategy(SingleSameStrategy):
                 return i - 1
         return 0
 
+    def predict(self, round_list: List[Round]):
+        predict_val = round_list[1].values[0]
+        round_list[0].values[0] = predict_val - 1
+
 
 class SingleIncreaseStrategy(SingleSameStrategy):
     """单个数 坚或斜着 递增"""
@@ -53,3 +61,7 @@ class SingleIncreaseStrategy(SingleSameStrategy):
             else:
                 return i - 1
         return 0
+
+    def predict(self, round_list: List[Round]):
+        predict_val = round_list[1].values[0]
+        round_list[0].values[0] = predict_val + 1
