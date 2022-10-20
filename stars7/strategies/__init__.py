@@ -8,28 +8,28 @@ from stars7 import utils
 from loguru import logger
 from abc import abstractmethod, ABCMeta
 from typing import List, Iterator, Sequence
-from collections import defaultdict
 
 
 class Strategy(metaclass=ABCMeta):
     def __init__(self,
-                 rect: Rectangle,
                  offset: Sequence[int],
                  elements: Sequence[int],
-                 works_at_least=2
+                 rect_rows: int = 4,
+                 works_at_least: int = 2
                  ) -> None:
-        self.rect = rect
+        self.rect = Rectangle(start_col=0, rows=rect_rows, cols=7)
         self.offset = offset
         self.elements = elements
         self.works_at_least = works_at_least
         self.max_execute_round = 10
-        self.pattern_counter = defaultdict(int)
+        self.prediction_col_names = ['c1', 'c2', 'c3', 'c4']
+        self.found_patterns = set()
 
     def get_name(self):
         return self.__class__.__name__
 
     @abstractmethod
-    def predict(self, predict_index: int, round_list: List[Round]):
+    def predict(self, predict_index: int, round_list: List[Round]) -> int:
         pass
 
     @abstractmethod
@@ -55,12 +55,23 @@ class Strategy(metaclass=ABCMeta):
             for points in combinations(range(total_idx), elements):
                 yield points
 
+    def _get_signature(self, zero_round_coords: List[Coordinate]):
+        list1 = []
+        for coord in zero_round_coords:
+            list1.append(str(coord.row).replace('-', 'N') + coord.col)
+        return self.get_name() + 'P' + (''.join(list1)).upper()
+
     def _execute_for_offset(self, offset, feed: Feed):
         for points in self.points_generator():
             round_list = self.execute_for_points(offset, points, feed)
             if round_list is None:
                 continue
-            zero_round_coords = [Coordinate(row=coord.row - self.rect.rows, col=coord.col) for coord in round_list[0].coordinates]
+            zero_round_coords = self.next_round_coord(offset, points, 0)
+            signature = self._get_signature(zero_round_coords)
+            if signature not in self.found_patterns:
+                self.found_patterns.add(signature)
+            else:
+                continue
 
             # make sure there's only one position in prediction row
             if len([c.row for c in zero_round_coords if c.row < -1]) > 0:
@@ -70,25 +81,30 @@ class Strategy(metaclass=ABCMeta):
             else:
                 predictable = False
 
-            predict_index = None
-            predict_success = False
-            if predictable:
-                predict_index = [i for i, c in enumerate(zero_round_coords) if c.row == -1][0]
-                zero_round_values = feed.get_values(zero_round_coords)
-                round_list.insert(0, Round(round_num=0, coordinates=zero_round_coords, offset=offset, values=zero_round_values))
-                self.predict(predict_index, round_list)
-                predict_value = round_list[0].values[predict_index]
-                actual_value = feed.get_next_value_at(predict_index)
-                logger.debug("predict value {val1}, actual value {val2} compare {res}", val1=predict_value, val2=actual_value, res=(actual_value == predict_value))
-                if actual_value is not None and actual_value == predict_value:
-                    predict_success = True
+            if not predictable:
+                continue
 
-            name = '{}-E{}O{}-R{}C{}'.format(self.get_name(), len(points), offset, self.rect.rows, self.rect.cols)
-            signature = '{}-P{}'.format(name, utils.list_to_str(points, join_str=''))
-            self.pattern_counter[name] += 1
-            yield Pattern(index=self.pattern_counter[name],
-                          name=name,
-                          signature=signature,
+            predict_success = False
+
+            predict_index = [i for i, c in enumerate(zero_round_coords) if c.row == -1][0]
+            predict_col_name = zero_round_coords[predict_index].col
+            if predict_col_name not in self.prediction_col_names:
+                continue
+            zero_round_values = feed.get_values(zero_round_coords)
+            round_list.insert(0, Round(round_num=0, coordinates=zero_round_coords, offset=offset, values=zero_round_values))
+            predict_value = self.predict(predict_index, round_list)
+            if predict_value is None:
+                continue
+            logger.debug("{signature} rounds: \n{rounds}", signature=signature, rounds=utils.list_to_str(round_list, join_str="\n"))
+            round_list[0].values[predict_index] = predict_value
+            actual_value = feed.get_next_value_at(predict_index)
+            if actual_value is None:
+                prediction_mask = ' '.join(['*' if c != predict_col_name else str(predict_value) for c in self.prediction_col_names])
+                logger.info('{signature} prediction: {mask}', signature=signature, mask=prediction_mask)
+            elif actual_value == predict_value:
+                predict_success = True
+
+            yield Pattern(signature=signature,
                           predictable=predictable,
                           predict_success=predict_success,
                           round_list=round_list)
@@ -98,12 +114,12 @@ class AssociatedRoundsStrategy(Strategy, metaclass=ABCMeta):
     """Rounds之间有关系的"""
 
     def __init__(self,
-                 rect: Rectangle,
                  offset,
                  elements,
                  column_offset: int = 0,
+                 rect_rows: int = 4,
                  works_at_least=2) -> None:
-        super().__init__(rect=rect, offset=offset, elements=elements, works_at_least=works_at_least)
+        super().__init__(offset=offset, elements=elements, rect_rows=rect_rows, works_at_least=works_at_least)
         # 是否跟随偏移纵轴
         self.column_offset = column_offset
         self.max_execute_round = 10

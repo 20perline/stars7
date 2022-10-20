@@ -11,14 +11,14 @@ class Statistics(object):
         self.success_counter = defaultdict(int)
 
     def add_data(self, pattern: Pattern):
-        p_name = pattern.name
-        self.all_counter[p_name] += 1
+        signature = pattern.signature
+        self.all_counter[signature] += 1
         if pattern.predict_success:
-            self.success_counter[p_name] += 1
+            self.success_counter[signature] += 1
 
     def show(self):
-        for p_name, cnt in self.all_counter.items():
-            success_cnt = self.success_counter.get(p_name)
+        for signature, cnt in self.all_counter.items():
+            success_cnt = self.success_counter.get(signature)
             if success_cnt is None:
                 success_cnt = 0
             if cnt is None:
@@ -27,8 +27,8 @@ class Statistics(object):
             else:
                 rate = "{0:.0%}".format(success_cnt / cnt)
             logger.info(
-                "pattern {name} \t\trate: {rate} ({cnt1}/{cnt2})",
-                name=p_name,
+                "pattern {signature} \t\trate: {rate} ({cnt1}/{cnt2})",
+                signature=signature,
                 rate=rate,
                 cnt1=success_cnt,
                 cnt2=cnt)

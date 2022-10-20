@@ -1,17 +1,15 @@
 # 点的总个数是偶数
 from stars7.round import Round
-from stars7.rectangle import Rectangle
 from stars7.strategies import AssociatedRoundsStrategy
 from stars7 import utils
 from typing import List
-from loguru import logger
 
 
 class AlternatedSumStrategy(AssociatedRoundsStrategy):
     """奇偶数位交叉合数相等"""
 
-    def __init__(self, rect: Rectangle, offset, works_at_least=2) -> None:
-        super().__init__(rect=rect, offset=offset, elements=range(2, 6, 2), works_at_least=works_at_least)
+    def __init__(self, offset, works_at_least=2) -> None:
+        super().__init__(offset=offset, elements=range(2, 6, 2), works_at_least=works_at_least)
 
     def verify(self, round_list: List[Round]):
         works = 1
@@ -32,9 +30,4 @@ class AlternatedSumStrategy(AssociatedRoundsStrategy):
         else:
             predict_val = (utils.next_greater_than(even_sum, odd_sum) - odd_sum) % 10
 
-        logger.debug(
-            "predict index {index}, predict value {val}, rounds:\n{rounds}",
-            index=predict_index,
-            val=predict_val,
-            rounds=utils.list_to_str(round_list, join_str="\n"))
-        zero_round_values[predict_index] = predict_val
+        return predict_val

@@ -4,7 +4,6 @@ from stars7.strategies import AssociatedRoundsStrategy
 from stars7 import utils
 from collections import Counter
 from typing import List
-from loguru import logger
 
 
 class EqualSumStrategy(AssociatedRoundsStrategy):
@@ -24,12 +23,7 @@ class EqualSumStrategy(AssociatedRoundsStrategy):
         current_sum = sum([v for v in zero_round_values if v != '?'])
         predict_val = (utils.next_greater_than(sum_val, current_sum) - current_sum) % 10
 
-        logger.debug(
-            "predict index {index}, predict value {val}, rounds:\n{rounds}",
-            index=predict_index,
-            val=predict_val,
-            rounds=utils.list_to_str(round_list, join_str="\n"))
-        zero_round_values[predict_index] = predict_val
+        return predict_val
 
 
 class OddEvenSumStrategy(AssociatedRoundsStrategy):
@@ -62,12 +56,7 @@ class OddEvenSumStrategy(AssociatedRoundsStrategy):
         current_sum = sum([v for v in zero_round_values if v != '?'])
         predict_val = (utils.next_greater_than(next_sum, current_sum) - current_sum) % 10
 
-        logger.debug(
-            "predict index {index}, predict value {val}, rounds:\n{rounds}",
-            index=predict_index,
-            val=predict_val,
-            rounds=utils.list_to_str(round_list, join_str="\n"))
-        zero_round_values[predict_index] = predict_val
+        return predict_val
 
 
 class SequenceSumStrategy(AssociatedRoundsStrategy):
@@ -93,9 +82,4 @@ class SequenceSumStrategy(AssociatedRoundsStrategy):
         current_sum = sum([v for v in zero_round_values if v != '?'])
         predict_val = (utils.next_greater_than(next_sum, current_sum) - current_sum) % 10
 
-        logger.debug(
-            "predict index {index}, predict value {val}, rounds:\n{rounds}",
-            index=predict_index,
-            val=predict_val,
-            rounds=utils.list_to_str(round_list, join_str="\n"))
-        zero_round_values[predict_index] = predict_val
+        return predict_val

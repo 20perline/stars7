@@ -25,7 +25,7 @@ class Printer(object):
         if not os.path.exists(next_dir):
             os.mkdir(next_dir)
         signature = pattern.signature
-        filename = '{}/{}.png'.format(next_dir, signature.replace('-', '') + str(pattern.index))
+        filename = '{}/{}.png'.format(next_dir, signature)
         image = Image.open(bg_path)
         draw = ImageDraw.Draw(image)
         prediction_rows = settings.PREDICTION_ROWS

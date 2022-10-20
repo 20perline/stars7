@@ -1,5 +1,4 @@
 # 单点
-from stars7.rectangle import Rectangle
 from stars7.round import Round
 from stars7.strategies import AssociatedRoundsStrategy
 from stars7 import utils
@@ -9,8 +8,8 @@ from typing import List
 class SingleSameStrategy(AssociatedRoundsStrategy):
     """单个数 坚或斜着 重复"""
 
-    def __init__(self, rect: Rectangle, offset, column_offset, works_at_least=2) -> None:
-        super().__init__(rect=rect, offset=offset, column_offset=column_offset, elements=[1], works_at_least=works_at_least)
+    def __init__(self, offset, column_offset, works_at_least=2) -> None:
+        super().__init__(offset=offset, column_offset=column_offset, elements=[1], works_at_least=works_at_least)
 
     def verify(self, round_list: List[Round]):
         sum_list = [c.values[0] for c in round_list]
@@ -23,8 +22,7 @@ class SingleSameStrategy(AssociatedRoundsStrategy):
         return 0
 
     def predict(self, predict_index: int, round_list: List[Round]):
-        predict_val = round_list[1].values[0]
-        round_list[0].values[0] = predict_val
+        return round_list[1].values[0]
 
 
 class SingleDecreaseStrategy(SingleSameStrategy):
@@ -44,7 +42,7 @@ class SingleDecreaseStrategy(SingleSameStrategy):
 
     def predict(self, predict_index: int, round_list: List[Round]):
         predict_val = round_list[1].values[0]
-        round_list[0].values[0] = predict_val - 1
+        return predict_val - 1
 
 
 class SingleIncreaseStrategy(SingleSameStrategy):
@@ -64,4 +62,4 @@ class SingleIncreaseStrategy(SingleSameStrategy):
 
     def predict(self, predict_index: int, round_list: List[Round]):
         predict_val = round_list[1].values[0]
-        round_list[0].values[0] = predict_val + 1
+        return predict_val + 1
