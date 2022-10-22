@@ -66,6 +66,8 @@ class SequenceSumStrategy(AssociatedRoundsStrategy):
         sum_list = [sum(c.values) % 10 for c in round_list]
         for i in range(self.works_at_least - 1, self.max_execute_round):
             sub_list = sum_list[:i]
+            if sum_list[0] == 0:
+                return i - 1
             if utils.list_in_decrement(sub_list) or utils.list_in_increment(sub_list):
                 continue
             else:

@@ -2,10 +2,12 @@ import os
 
 CSV_HEADERS = ['day', 'num', 'c0', 'c1', 'c2', 'c3', 'c4', 'c5', 'c6', 'c7']
 COL_NAMES = ['c0', 'c1', 'c2', 'c3', 'c4', 'c5', 'c6', 'c7']
+KEY_COL_NAMES = ['c1', 'c2', 'c3', 'c4']
 
 ROOT_DIR = os.path.dirname(os.path.realpath(__file__ + '/../'))
-DATA_PATH = ROOT_DIR + '/data/dat.csv'
-BG_PATH = ROOT_DIR + '/data/bg.png'
+DATA_DIR = os.path.join(ROOT_DIR, 'data')
+DATABASE_PATH = os.path.join(DATA_DIR, 'dat.csv')
+BG_PATH = os.path.join(DATA_DIR, 'bg.png')
 
 # image settings
 RENDER_ON = True

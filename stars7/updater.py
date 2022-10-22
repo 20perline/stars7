@@ -7,36 +7,36 @@ from stars7 import settings, utils
 from abc import abstractmethod, ABCMeta
 
 
-class Database(metaclass=ABCMeta):
+class Updater(metaclass=ABCMeta):
 
-    def refresh(self):
+    def update(self):
         last_draw_day = utils.get_last_draw_day()
         first_row_day = None
-        if os.path.exists(settings.DATA_PATH):
-            with open(settings.DATA_PATH, 'r') as file:
+        if os.path.exists(settings.DATABASE_PATH):
+            with open(settings.DATABASE_PATH, 'r') as file:
                 reader = csv.DictReader(file)
                 first_row_day = next(reader)['day']
         if first_row_day == last_draw_day:
-            logger.info("database was already up to date {day}", day=last_draw_day)
+            logger.info("stars7 data was already up to date {day}", day=last_draw_day)
             return
         data_row = self.fetch()
         if len(data_row) > 0:
-            self.update(data_row)
+            self.save_to_database(data_row)
         else:
-            logger.warning('no data fetched, database updating aborted')
+            logger.warning('no data fetched, update aborted')
 
     @abstractmethod
     def fetch(self) -> list:
         pass
 
-    def update(self, data_row):
-        with open(settings.DATA_PATH, 'w') as file:
+    def save_to_database(self, data_row):
+        with open(settings.DATABASE_PATH, 'w') as file:
             writer = csv.writer(file)
             writer.writerow(settings.CSV_HEADERS)
             writer.writerows(data_row)
 
 
-class SportDatabase(Database):
+class SportUpdater(Updater):
 
     def fetch(self) -> list:
         logger.info('start to download data from from https://www.lottery.gov.cn')

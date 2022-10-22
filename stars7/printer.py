@@ -21,9 +21,10 @@ class Printer(object):
         bg_path = settings.BG_PATH
         if not os.path.exists(bg_path):
             return False
-        next_dir = '{}/data/{}'.format(settings.ROOT_DIR, self.feed.next_num)
+        rounds = len(pattern.round_list)
+        next_dir = '{}/data/{}/{}'.format(settings.ROOT_DIR, self.feed.next_num, str(rounds))
         if not os.path.exists(next_dir):
-            os.mkdir(next_dir)
+            os.makedirs(next_dir)
         signature = pattern.signature
         filename = '{}/{}.png'.format(next_dir, signature)
         image = Image.open(bg_path)

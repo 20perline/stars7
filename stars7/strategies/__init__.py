@@ -4,6 +4,7 @@ from stars7.rectangle import Rectangle
 from stars7.round import Round
 from stars7.feed import Feed
 from stars7.pattern import Pattern
+from stars7 import settings
 from stars7 import utils
 from loguru import logger
 from abc import abstractmethod, ABCMeta
@@ -22,11 +23,11 @@ class Strategy(metaclass=ABCMeta):
         self.elements = elements
         self.works_at_least = works_at_least
         self.max_execute_round = 10
-        self.prediction_col_names = ['c1', 'c2', 'c3', 'c4']
+        self.key_col_names = settings.KEY_COL_NAMES
         self.found_patterns = set()
 
     def get_name(self):
-        return self.__class__.__name__
+        return self.__class__.__name__.replace('Strategy', '')
 
     @abstractmethod
     def predict(self, predict_index: int, round_list: List[Round]) -> int:
@@ -55,19 +56,21 @@ class Strategy(metaclass=ABCMeta):
             for points in combinations(range(total_idx), elements):
                 yield points
 
-    def _get_signature(self, zero_round_coords: List[Coordinate]):
+    def _coords_to_string(self, zero_round_coords: List[Coordinate]):
         list1 = []
         for coord in zero_round_coords:
             list1.append(str(coord.row).replace('-', 'N') + coord.col)
-        return self.get_name() + 'P' + (''.join(list1)).upper()
+        return 'P' + (''.join(list1)).upper()
 
     def _execute_for_offset(self, offset, feed: Feed):
+        name = self.get_name()
+        next_num = feed.next_num
         for points in self.points_generator():
             round_list = self.execute_for_points(offset, points, feed)
             if round_list is None:
                 continue
             zero_round_coords = self.next_round_coord(offset, points, 0)
-            signature = self._get_signature(zero_round_coords)
+            signature = name + self._coords_to_string(zero_round_coords)
             if signature not in self.found_patterns:
                 self.found_patterns.add(signature)
             else:
@@ -88,26 +91,31 @@ class Strategy(metaclass=ABCMeta):
 
             predict_index = [i for i, c in enumerate(zero_round_coords) if c.row == -1][0]
             predict_col_name = zero_round_coords[predict_index].col
-            if predict_col_name not in self.prediction_col_names:
+            if predict_col_name not in self.key_col_names:
                 continue
             zero_round_values = feed.get_values(zero_round_coords)
             round_list.insert(0, Round(round_num=0, coordinates=zero_round_coords, offset=offset, values=zero_round_values))
             predict_value = self.predict(predict_index, round_list)
             if predict_value is None:
                 continue
-            logger.debug("{signature} rounds: \n{rounds}", signature=signature, rounds=utils.list_to_str(round_list, join_str="\n"))
+            logger.debug(
+                "[{num}] {signature} rounds: \n{rounds}",
+                num=next_num, signature=signature, rounds=utils.list_to_str(round_list, join_str="\n"))
+
             round_list[0].values[predict_index] = predict_value
-            actual_value = feed.get_next_value_at(predict_index)
-            if actual_value is None:
-                prediction_mask = ' '.join(['*' if c != predict_col_name else str(predict_value) for c in self.prediction_col_names])
-                logger.info('{signature} prediction: {mask}', signature=signature, mask=prediction_mask)
-            elif actual_value == predict_value:
+            actual_value = feed.get_next_value_at(predict_col_name)
+            prediction_mask = ''.join(['*' if c != predict_col_name else str(predict_value) for c in self.key_col_names])
+            logger.info(
+                '[{num}] {signature} predict value: {mask}, actual value: {av}',
+                num=next_num, signature=signature, mask=prediction_mask, av=actual_value)
+
+            if actual_value == predict_value:
                 predict_success = True
 
-            yield Pattern(signature=signature,
-                          predictable=predictable,
-                          predict_success=predict_success,
-                          round_list=round_list)
+            yield Pattern(signature=signature, strategy=name,
+                          predictable=predictable, predict_success=predict_success,
+                          prediction_num=next_num, prediction_mask=prediction_mask,
+                          round_list=round_list, winning_ticket=feed.winning_ticket)
 
 
 class AssociatedRoundsStrategy(Strategy, metaclass=ABCMeta):
