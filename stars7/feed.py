@@ -7,9 +7,12 @@ import pandas as pd
 
 class Feed(object):
 
-    def __init__(self, backward=0) -> None:
+    def __init__(self, backward=0, num=None) -> None:
         self.star7_data = pd.read_csv(settings.DATABASE_PATH)
-        total_rows = len(self.star7_data.index)
+        num_list = self.star7_data['num'].to_list()
+        total_rows = len(num_list)
+        if num is not None:
+            backward = num_list.index(num) + 1
         if backward > 0:
             self.df = self.star7_data.loc[backward:total_rows, settings.COL_NAMES]
             self.next_df = self.star7_data.loc[backward-1:backward-1, settings.COL_NAMES]
