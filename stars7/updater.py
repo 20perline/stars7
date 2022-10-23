@@ -9,6 +9,12 @@ from abc import abstractmethod, ABCMeta
 
 class Updater(metaclass=ABCMeta):
 
+    _logger = logger
+
+    @staticmethod
+    def set_logger(logger_):
+        Updater._logger = logger_
+
     def update(self):
         last_draw_day = utils.get_last_draw_day()
         first_row_day = None
@@ -17,13 +23,13 @@ class Updater(metaclass=ABCMeta):
                 reader = csv.DictReader(file)
                 first_row_day = next(reader)['day']
         if first_row_day == last_draw_day:
-            logger.info("stars7 data was already up to date {day}", day=last_draw_day)
+            self._logger.info("stars7 data was already up to date {day}", day=last_draw_day)
             return
         data_row = self.fetch()
         if len(data_row) > 0:
             self.save_to_database(data_row)
         else:
-            logger.warning('no data fetched, update aborted')
+            self._logger.warning('no data fetched, update aborted')
 
     @abstractmethod
     def fetch(self) -> list:
@@ -39,7 +45,7 @@ class Updater(metaclass=ABCMeta):
 class SportUpdater(Updater):
 
     def fetch(self) -> list:
-        logger.info('start to download data from from https://www.lottery.gov.cn')
+        self._logger.info('start to download data from from https://www.lottery.gov.cn')
         total_page = 100
         page_num = 1
         max_total = 250
@@ -75,9 +81,9 @@ class SportUpdater(Updater):
                 data_row.append(a)
                 idx += 1
             if idx >= max_total:
-                logger.info('total rows reach maximum {}'.format(max_total))
+                self._logger.info('total rows reach maximum {}'.format(max_total))
                 break
-            logger.info('download page {} done.'.format(resp.url))
+            self._logger.info('download page {} done.'.format(resp.url))
             page_num += 1
-        logger.info('download data end')
+        self._logger.info('download data end')
         return data_row

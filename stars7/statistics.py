@@ -1,6 +1,7 @@
 from collections import defaultdict
 from stars7.pattern import Pattern
 from stars7 import settings
+from loguru import logger
 import matplotlib.pyplot as plt
 import pandas as pd
 import os
@@ -8,6 +9,12 @@ import os
 
 class Statistics(object):
     """统计"""
+
+    _logger = logger
+
+    @staticmethod
+    def set_logger(logger_):
+        Statistics._logger = logger_
 
     def __init__(self, analyze_mode=True) -> None:
         self.analyze_mode = analyze_mode

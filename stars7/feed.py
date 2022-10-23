@@ -7,6 +7,12 @@ import pandas as pd
 
 class Feed(object):
 
+    _logger = logger
+
+    @staticmethod
+    def set_logger(logger_):
+        Feed._logger = logger_
+
     def __init__(self, backward=0, num=None) -> None:
         self.star7_data = pd.read_csv(settings.DATABASE_PATH)
         num_list = self.star7_data['num'].to_list()
@@ -30,7 +36,7 @@ class Feed(object):
             if self.star7_data.at[i, 'num'] % 4 == 0:
                 self.first_split_row = i
                 break
-        logger.info(
+        self._logger.info(
             "feed loaded successfully, total rows {rows}, backward {back}, next_num {num}",
             rows=total_rows, back=backward, num=self.next_num)
 

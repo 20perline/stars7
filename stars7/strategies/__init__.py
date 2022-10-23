@@ -12,6 +12,14 @@ from typing import List, Iterator, Sequence
 
 
 class Strategy(metaclass=ABCMeta):
+    """策略基类"""
+
+    _logger = logger
+
+    @staticmethod
+    def set_logger(logger_):
+        Strategy._logger = logger_
+
     def __init__(self,
                  offset: Sequence[int],
                  elements: Sequence[int],
@@ -98,14 +106,14 @@ class Strategy(metaclass=ABCMeta):
             predict_value = self.predict(predict_index, round_list)
             if predict_value is None:
                 continue
-            logger.debug(
+            self._logger.debug(
                 "[{num}] {signature} rounds: \n{rounds}",
                 num=next_num, signature=signature, rounds=utils.list_to_str(round_list, join_str="\n"))
 
             round_list[0].values[predict_index] = predict_value
             actual_value = feed.get_next_value_at(predict_col_name)
             prediction_mask = ''.join(['*' if c != predict_col_name else str(predict_value) for c in self.key_col_names])
-            logger.info(
+            self._logger.info(
                 '[{num}] {signature} predict value: {mask}, actual value: {av}',
                 num=next_num, signature=signature, mask=prediction_mask, av=actual_value)
 
@@ -159,7 +167,7 @@ class AssociatedRoundsStrategy(Strategy, metaclass=ABCMeta):
             return None
         works_cnt = self.verify(round_list=round_list)
         if works_cnt >= self.works_at_least:
-            logger.trace(
+            self._logger.trace(
                 "found {strategy} works for {works_cnt} times: \n{round_list}",
                 strategy=self.get_name(),
                 works_cnt=works_cnt,
