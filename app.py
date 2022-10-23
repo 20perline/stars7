@@ -1,4 +1,4 @@
-from stars7.strategies import even, serialsum, single, twins
+from stars7.strategies import even, serialsum, single, twins, isolated
 from stars7.engine import Engine
 
 
@@ -9,22 +9,25 @@ if __name__ == '__main__':
     offset = range(4)
     elements = range(1, 4)
 
+    strategy8 = isolated.SumToLastStrategy(offset=offset, elements=elements, works_at_least=3)
+    engine.add_strategy(strategy8)
+
     strategy5 = serialsum.OddEvenSumStrategy(offset=offset, elements=elements, works_at_least=4)
     engine.add_strategy(strategy5)
 
-    strategy7 = serialsum.SequenceSumStrategy(offset=offset, elements=elements, works_at_least=2)
+    strategy7 = serialsum.SequenceSumStrategy(offset=offset, elements=elements, works_at_least=3)
     engine.add_strategy(strategy7)
 
-    strategy1 = serialsum.EqualSumStrategy(offset=offset, column_offset=0, elements=elements, works_at_least=2)
+    strategy1 = serialsum.EqualSumStrategy(offset=offset, column_offset=0, elements=elements, works_at_least=3)
     engine.add_strategy(strategy1)
 
-    strategy3 = twins.TwinsStrategy(offset=offset, works_at_least=2)
+    strategy3 = twins.TwinsStrategy(offset=offset, works_at_least=3)
     engine.add_strategy(strategy3)
 
-    strategy6 = twins.OppositeStrategy(offset=offset, works_at_least=2)
+    strategy6 = twins.OppositeStrategy(offset=offset, works_at_least=3)
     engine.add_strategy(strategy6)
 
-    strategy4 = even.AlternatedSumStrategy(offset=offset, works_at_least=2)
+    strategy4 = even.AlternatedSumStrategy(offset=offset, works_at_least=3)
     engine.add_strategy(strategy4)
 
     for column_offset in range(-1, 2):
@@ -35,6 +38,7 @@ if __name__ == '__main__':
         engine.add_strategy(strategy21)
         engine.add_strategy(strategy22)
         engine.add_strategy(strategy23)
-    engine.execute()
+
+    # engine.execute()
     # engine.execute(num=22120)
-    # engine.analyze(num_count=200, process_count=None)
+    engine.analyze(num_count=200, process_count=None)
