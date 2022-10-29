@@ -3,6 +3,7 @@ from stars7.pattern import Pattern
 from stars7 import settings
 from loguru import logger
 import matplotlib.pyplot as plt
+from matplotlib.ticker import MaxNLocator
 import pandas as pd
 import os
 
@@ -18,8 +19,6 @@ class Statistics(object):
 
     def __init__(self, analyze_mode=True) -> None:
         self.analyze_mode = analyze_mode
-        self.strategy_counter_all = defaultdict(int)
-        self.strategy_success_counter = defaultdict(int)
         self.mask_counter_by_num = dict()
         self.strategy_counter_by_num = dict()
         self.success_mask_by_num = defaultdict(set)
@@ -34,15 +33,15 @@ class Statistics(object):
 
         p_strategy = pattern.strategy
         strategy_counter = self.strategy_counter_by_num.get(p_num, defaultdict(int))
-        strategy_counter[p_strategy] += 1
-        self.strategy_counter_by_num[p_num] = strategy_counter
-
-        self.strategy_counter_all[p_strategy] += 1
+        strategy_counter[p_strategy] += 0
+        strategy_counter[p_strategy + 'Total'] += 1
 
         if pattern.predict_success:
             self.winning_tickets[p_num] = pattern.winning_ticket
             self.success_mask_by_num[p_num].add(p_mask)
-            self.strategy_success_counter[p_strategy] += 1
+            strategy_counter[p_strategy] += 1
+
+        self.strategy_counter_by_num[p_num] = strategy_counter
 
     def show(self):
         self._save_stat_per_num()
@@ -69,14 +68,32 @@ class Statistics(object):
             plt.close()
 
     def _save_success_rate_per_strategy(self):
-        ss_counter = self.strategy_success_counter
-        if len(ss_counter) > 0:
-            rate_list = [(ss_counter[s] / self.strategy_counter_all[s]) * 100 for s in ss_counter.keys()]
-            success_df = pd.DataFrame({'rate': rate_list}, index=ss_counter.keys())
-            ax = success_df.plot.bar(rot=0, figsize=(10, 8), fontsize=8)
-            for p in ax.patches:
-                ax.annotate(str(int(p.get_height())) + '%', (p.get_x() * 1.01, p.get_height() * 1.005))
+        df = pd.DataFrame(self.strategy_counter_by_num).T
+        df = df.sort_index()
+        st_num_stat_file = os.path.join(settings.DATA_DIR, 'strategy_num_stat.csv')
+        df.to_csv(st_num_stat_file)
+        total_df = df.sum(numeric_only=True, axis=0)
+        st_columns = [c for c in df.columns if not c.endswith('Total')]
+        st_rate_columns = []
+        for st in st_columns:
+            rate_c = st + 'Rate'
+            st_rate_columns.append(rate_c)
+            df[rate_c] = (df[st] / df[st + 'Total']) * 100
+            total_df[rate_c] = (total_df[st] / total_df[st + 'Total']) * 100
 
-            success_stat_file = os.path.join(settings.DATA_DIR, 'success_rate.jpg')
-            plt.savefig(success_stat_file)
-            plt.show()
+        df.fillna(0, inplace=True)
+        total_df.fillna(0, inplace=True)
+
+        rate_df = df[st_rate_columns]
+        total_rate_df = total_df[st_rate_columns]
+
+        fig, axes = plt.subplots(nrows=2, ncols=1, figsize=(16, 10), gridspec_kw={'height_ratios': [2, 3]})
+        total_rate_df.plot.bar(ax=axes[0], rot=0, fontsize=8)
+
+        ax1 = rate_df.plot(ax=axes[1])
+        ax1.ticklabel_format(useOffset=False)
+        ax1.get_xaxis().set_major_locator(MaxNLocator(integer=True, nbins='auto'))
+
+        success_stat_file = os.path.join(settings.DATA_DIR, 'success_rate.jpg')
+        plt.savefig(success_stat_file)
+        plt.show()

@@ -41,4 +41,4 @@ if __name__ == '__main__':
 
     # engine.execute()
     # engine.execute(num=22120)
-    engine.analyze(num_count=200, process_count=None)
+    engine.analyze(num_count=5, process_count=None)
