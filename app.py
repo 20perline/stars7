@@ -39,6 +39,6 @@ if __name__ == '__main__':
         engine.add_strategy(strategy22)
         engine.add_strategy(strategy23)
 
-    # engine.execute()
-    # engine.execute(num=22120)
-    engine.analyze(num_count=5, process_count=None)
+    engine.execute()
+    # engine.execute(num=22122)
+    # engine.analyze(num_count=100, process_count=None)

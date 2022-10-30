@@ -32,7 +32,7 @@ class Strategy(metaclass=ABCMeta):
         self.works_at_least = works_at_least
         self.max_execute_round = 10
         self.key_col_names = settings.KEY_COL_NAMES
-        self.found_patterns = set()
+        self.found_signatures = set()
 
     def get_name(self):
         return self.__class__.__name__.replace('Strategy', '')
@@ -79,8 +79,8 @@ class Strategy(metaclass=ABCMeta):
                 continue
             zero_round_coords = self.next_round_coord(offset, points, 0)
             signature = name + self._coords_to_string(zero_round_coords)
-            if signature not in self.found_patterns:
-                self.found_patterns.add(signature)
+            if signature not in self.found_signatures:
+                self.found_signatures.add(signature)
             else:
                 continue
 

@@ -46,7 +46,7 @@ class Engine(object):
             for pattern in strategy.execute(feed):
                 statistics.add_data(pattern)
                 printer.do_print(pattern)
-        statistics.show()
+        statistics.display_result()
 
     def analyze(self, num_count=2, process_count=None):
         start_time = time.perf_counter()
@@ -65,7 +65,7 @@ class Engine(object):
 
         end_time = time.perf_counter()
         logger.info('time elapsed: {elapsed} seconds', elapsed=end_time - start_time)
-        statistics.show()
+        statistics.display_result()
 
     def _process_analyze(self, args):
         feed, strategy, statistics = args
