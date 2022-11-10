@@ -6,6 +6,8 @@ import string
 
 def get_last_draw_day():
     today = datetime.today()
+    if today.weekday() in [1, 4, 6] and today.hour > 20:
+        return today.strftime('%Y-%m-%d')
     for i in range(1, 7):
         past_date = today - timedelta(days=i)
         wd = past_date.weekday()
@@ -57,11 +59,11 @@ def next_greater_than(a, b):
 
 
 if __name__ == '__main__':
-    # day = get_last_draw_day()
-    # print(day)
+    day = get_last_draw_day()
+    print(day)
     # a = next_greater_than(9, 6)
     # print(a)
-    print(list_in_increment([3, 4, 5]))
-    print(list_in_increment([1, 4, 5]))
-    print(list_in_decrement([3, 2, 1]))
-    print(list_in_decrement([6, 5, 3]))
+    # print(list_in_increment([3, 4, 5]))
+    # print(list_in_increment([1, 4, 5]))
+    # print(list_in_decrement([3, 2, 1]))
+    # print(list_in_decrement([6, 5, 3]))

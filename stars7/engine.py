@@ -3,7 +3,7 @@ from stars7.strategies import Strategy
 from stars7.printer import Printer
 from stars7.feed import Feed
 from stars7.statistics import Statistics
-from stars7.updater import SportUpdater, Updater
+from stars7.updater import Updater
 from multiprocessing import Pool
 from multiprocessing.managers import BaseManager
 import time
@@ -15,7 +15,6 @@ class Engine(object):
     _logger = None
 
     def __init__(self) -> None:
-
         logger.remove()
         logger.add(
             sys.stderr,
@@ -23,7 +22,7 @@ class Engine(object):
             format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> {process} [{level}] {name} - <level>{message}</level>",
             level='DEBUG', enqueue=True)
 
-        updater = SportUpdater()
+        updater = Updater()
         updater.update()
         self.strategies = []
 

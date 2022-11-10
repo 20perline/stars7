@@ -9,7 +9,7 @@ if __name__ == '__main__':
     offset = range(4)
     elements = range(1, 4)
 
-    strategy8 = isolated.SumToLastStrategy(offset=offset, elements=elements, works_at_least=3)
+    strategy8 = isolated.SumToLastStrategy(offset=offset, elements=elements, works_at_least=2)
     engine.add_strategy(strategy8)
 
     strategy5 = serialsum.OddEvenSumStrategy(offset=offset, elements=elements, works_at_least=4)
@@ -27,7 +27,7 @@ if __name__ == '__main__':
     strategy6 = twins.OppositeStrategy(offset=offset, works_at_least=3)
     engine.add_strategy(strategy6)
 
-    strategy4 = even.AlternatedSumStrategy(offset=offset, works_at_least=3)
+    strategy4 = even.AlternatedSumStrategy(offset=offset, works_at_least=2)
     engine.add_strategy(strategy4)
 
     for column_offset in range(-1, 2):

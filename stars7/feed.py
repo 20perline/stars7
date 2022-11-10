@@ -3,6 +3,7 @@ from stars7.coordinate import Coordinate
 from loguru import logger
 from typing import List
 import pandas as pd
+import sqlite3
 
 
 class Feed(object):
@@ -14,7 +15,8 @@ class Feed(object):
         Feed._logger = logger_
 
     def __init__(self, backward=0, num=None) -> None:
-        self.star7_data = pd.read_csv(settings.DATABASE_PATH)
+        connection = sqlite3.connect(settings.DATABASE_PATH)
+        self.star7_data = pd.read_sql_query('select * from lottery order by num desc', con=connection)
         num_list = self.star7_data['num'].to_list()
         total_rows = len(num_list)
         if num is not None:
