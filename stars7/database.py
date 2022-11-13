@@ -25,7 +25,8 @@ class Database(object):
 
     def __init__(self) -> None:
         if not self._initiated:
-            self.conn = sqlite3.connect(settings.DATABASE_PATH)
+            self.conn = sqlite3.connect(settings.DATABASE_PATH, check_same_thread=False)
+            self.conn.row_factory = sqlite3.Row
             self.cursor = self.conn.cursor()
             self.create_tables()
             self._initiated = True
@@ -75,8 +76,10 @@ class Database(object):
         self.conn.commit()
 
     def get_draw_data_frame(self):
-        return pd.read_sql_query('select * from lottery order by num desc',
-                                 self.conn)
+        return pd.read_sql_query('select * from lottery order by num desc', self.conn)
+
+    def get_draw_data(self, total=30):
+        return self.cursor.execute('select * from lottery order by num desc').fetchmany(total)
 
     def save_pattern(self, pattern: Pattern):
         model = {
@@ -97,3 +100,7 @@ class Database(object):
                 :strategy, :offset, :elements, :winning_ticket, :works, :round_list)
             """, model)
         self.conn.commit()
+
+    def get_pattern_list(self, num, mask):
+        return self.cursor.execute(
+            "select * from pattern where prediction_num = ? and prediction_mask = ?", (num, mask)).fetchall()
