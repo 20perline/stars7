@@ -1,9 +1,8 @@
 from stars7 import settings
+from stars7.database import Database
 from stars7.coordinate import Coordinate
 from loguru import logger
 from typing import List
-import pandas as pd
-import sqlite3
 
 
 class Feed(object):
@@ -15,8 +14,8 @@ class Feed(object):
         Feed._logger = logger_
 
     def __init__(self, backward=0, num=None) -> None:
-        connection = sqlite3.connect(settings.DATABASE_PATH)
-        self.star7_data = pd.read_sql_query('select * from lottery order by num desc', con=connection)
+        database = Database()
+        self.star7_data = database.get_draw_data_frame()
         num_list = self.star7_data['num'].to_list()
         total_rows = len(num_list)
         if num is not None:
@@ -32,7 +31,7 @@ class Feed(object):
             self.next_df = None
             self.winning_ticket = ''
 
-        self.next_num = self.star7_data.at[0, 'num'] + 1 - backward
+        self.next_num = int(self.star7_data.at[0, 'num']) + 1 - backward
         self.first_split_row = 0
         for i in range(4):
             if self.star7_data.at[i, 'num'] % 4 == 0:

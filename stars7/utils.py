@@ -27,6 +27,20 @@ def list_all_even(list1):
     return all(s % 2 == 0 for s in list1)
 
 
+def list_arithmetical_series(list1):
+
+    def _is_arith_series(list1):
+        diff = list1[1] - list1[0]
+        n = len(list1)
+        for i in range(2, n):
+            if list1[i] - list1[i - 1] != diff:
+                return False
+        return True
+
+    list2 = [x if x != 0 else 10 for x in list1]
+    return _is_arith_series(list1) or _is_arith_series(list2)
+
+
 def list_all_odd(list1):
     return all(s % 2 != 0 for s in list1)
 
@@ -59,11 +73,12 @@ def next_greater_than(a, b):
 
 
 if __name__ == '__main__':
-    day = get_last_draw_day()
-    print(day)
+    # day = get_last_draw_day()
+    # print(day)
     # a = next_greater_than(9, 6)
     # print(a)
-    # print(list_in_increment([3, 4, 5]))
-    # print(list_in_increment([1, 4, 5]))
-    # print(list_in_decrement([3, 2, 1]))
+    print(list_arithmetical_series([4, 2, 0, 8]))
+    print(list_arithmetical_series([0, 2, 4, 6]))
+    print(list_arithmetical_series([0, 8, 6, 4]))
+    print(list_arithmetical_series([4, 6, 8, 0]))
     # print(list_in_decrement([6, 5, 3]))

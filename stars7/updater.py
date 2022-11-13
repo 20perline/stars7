@@ -1,8 +1,8 @@
 # download data from the internet
 import requests
-import sqlite3
 from loguru import logger
-from stars7 import settings, utils
+from stars7 import utils
+from stars7.database import Database
 
 
 class Updater(object):
@@ -24,28 +24,13 @@ class Updater(object):
 
     def update(self):
         last_draw_day = utils.get_last_draw_day()
-        first_row_day = None
-        connection = sqlite3.connect(settings.DATABASE_PATH)
-        cursor = connection.cursor()
-        cursor.execute("""CREATE TABLE IF NOT EXISTS lottery (
-            day TEXT,
-            num INTEGER,
-            c0 INTEGER,
-            c1 INTEGER,
-            c2 INTEGER,
-            c3 INTEGER,
-            c4 INTEGER,
-            c5 INTEGER,
-            c6 INTEGER,
-            c7 INTEGER,
-            PRIMARY KEY(num)
-            )""")
-        first_row_day = cursor.execute("select max(day) as day from lottery").fetchone()[0]
+        database = Database()
+        latest_draw_day = database.get_latest_draw_day()
 
-        if first_row_day == last_draw_day:
+        if latest_draw_day == last_draw_day:
             self._logger.info("stars7 data was already up to date {day}", day=last_draw_day)
             return
-        elif first_row_day is None:
+        elif latest_draw_day is None:
             # no data, update all
             total_pages = self.MAX_PAGE
         else:
@@ -54,11 +39,9 @@ class Updater(object):
 
         data_rows = self.fetch(total_pages)
         if len(data_rows) > 0:
-            cursor.executemany("insert or ignore into lottery VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", data_rows)
-            connection.commit()
+            database.save_draw_records(data_rows)
         else:
             self._logger.warning('no data fetched, update aborted')
-        connection.close()
 
     def fetch(self, total_pages) -> list:
         self._logger.info('start to download data from from {}'.format(

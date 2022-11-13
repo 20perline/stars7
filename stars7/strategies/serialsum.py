@@ -27,7 +27,7 @@ class EqualSumStrategy(AssociatedRoundsStrategy):
 
 
 class OddEvenSumStrategy(AssociatedRoundsStrategy):
-    """合数全奇或全偶且各不相同"""
+    """合数全奇等差或全偶等差"""
 
     def verify(self, round_list: List[Round]):
         sum_list = [sum(c.values) % 10 for c in round_list]
@@ -37,9 +37,9 @@ class OddEvenSumStrategy(AssociatedRoundsStrategy):
             max_cnt = max(counter.values())
             if max_cnt >= 2:
                 return i - 1
-            if utils.list_all_even(sub_list) or utils.list_all_odd(sub_list):
-                continue
-            else:
+            if not utils.list_all_even(sub_list) and not utils.list_all_odd(sub_list):
+                return i - 1
+            elif not utils.list_arithmetical_series(sub_list):
                 return i - 1
         return 0
 
@@ -47,6 +47,8 @@ class OddEvenSumStrategy(AssociatedRoundsStrategy):
         if len(round_list) != 5:
             return None
         sum_list = [sum(c.values) % 10 for i, c in enumerate(round_list) if i > 0]
+        if sum_list[0] == 0:
+            return None
         a = [0, 2, 4, 6, 8]
         if sum_list[0] % 2 != 0:
             a = [1, 3, 5, 7, 9]

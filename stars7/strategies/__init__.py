@@ -8,7 +8,7 @@ from stars7 import settings
 from stars7 import utils
 from loguru import logger
 from abc import abstractmethod, ABCMeta
-from typing import List, Iterator, Sequence
+from typing import List, Iterator, Sequence, Tuple
 
 
 class Strategy(metaclass=ABCMeta):
@@ -23,12 +23,12 @@ class Strategy(metaclass=ABCMeta):
     def __init__(self,
                  offset: Sequence[int],
                  elements: Sequence[int],
-                 rect_rows: int = 4,
+                 rect_rows: Sequence[int],
                  works_at_least: int = 2
                  ) -> None:
-        self.rect = Rectangle(start_col=0, rows=rect_rows, cols=7)
         self.offset = offset
         self.elements = elements
+        self.rect_rows = rect_rows
         self.works_at_least = works_at_least
         self.max_execute_round = 10
         self.key_col_names = settings.KEY_COL_NAMES
@@ -42,24 +42,24 @@ class Strategy(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def next_round_coord(self, offset, points, round_num) -> List[Coordinate]:
+    def next_round_coord(self, rect: Rectangle, points: Tuple[int], round_num: int) -> List[Coordinate]:
         pass
 
     @abstractmethod
-    def execute_for_points(self, offset, points, feed: Feed) -> List[Round]:
+    def execute_for_points(self, rect: Rectangle, points: Tuple[int], feed: Feed) -> List[Round]:
         pass
 
     def execute(self, feed: Feed) -> Iterator[Pattern]:
         for offset in self.offset:
             if offset < 0:
                 continue
-            for pattern in self._execute_for_offset(offset, feed):
-                yield pattern
+            for rows in self.rect_rows:
+                rect = Rectangle(offset=offset, rows=rows)
+                for pattern in self._execute(rect, feed):
+                    yield pattern
 
-    def points_generator(self):
-        rect_rows = self.rect.rows
-        rect_cols = self.rect.cols
-        total_idx = rect_rows * rect_cols
+    def points_generator(self, rect: Rectangle):
+        total_idx = rect.rows * rect.cols
         for elements in self.elements:
             for points in combinations(range(total_idx), elements):
                 yield points
@@ -70,18 +70,21 @@ class Strategy(metaclass=ABCMeta):
             list1.append(str(coord.row).replace('-', 'N') + coord.col)
         return 'P' + (''.join(list1)).upper()
 
-    def _execute_for_offset(self, offset, feed: Feed):
+    def _execute(self, rect: Rectangle, feed: Feed):
+        offset = rect.offset
         name = self.get_name()
         next_num = feed.next_num
-        for points in self.points_generator():
-            round_list = self.execute_for_points(offset, points, feed)
-            if round_list is None:
-                continue
-            zero_round_coords = self.next_round_coord(offset, points, 0)
+        for points in self.points_generator(rect):
+            # duplicate filter
+            zero_round_coords = self.next_round_coord(rect, points, 0)
             signature = name + self._coords_to_string(zero_round_coords)
             if signature not in self.found_signatures:
                 self.found_signatures.add(signature)
             else:
+                continue
+
+            round_list = self.execute_for_points(rect, points, feed)
+            if round_list is None:
                 continue
 
             # make sure there's only one position in prediction row
@@ -95,7 +98,7 @@ class Strategy(metaclass=ABCMeta):
             if not predictable:
                 continue
 
-            predict_success = False
+            prediction_success = False
 
             predict_index = [i for i, c in enumerate(zero_round_coords) if c.row == -1][0]
             predict_col_name = zero_round_coords[predict_index].col
@@ -118,11 +121,10 @@ class Strategy(metaclass=ABCMeta):
                 num=next_num, signature=signature, mask=prediction_mask, av=actual_value)
 
             if actual_value == predict_value:
-                predict_success = True
+                prediction_success = True
 
-            yield Pattern(signature=signature, strategy=name,
-                          predictable=predictable, predict_success=predict_success,
-                          prediction_num=next_num, prediction_mask=prediction_mask,
+            yield Pattern(signature=signature, strategy=name, predict_success=prediction_success,
+                          prediction_num=next_num, prediction_mask=prediction_mask, rect=rect,
                           round_list=round_list, winning_ticket=feed.winning_ticket)
 
 
@@ -130,32 +132,33 @@ class AssociatedRoundsStrategy(Strategy, metaclass=ABCMeta):
     """Rounds之间有关系的"""
 
     def __init__(self,
-                 offset,
-                 elements,
-                 column_offset: int = 0,
-                 rect_rows: int = 4,
-                 works_at_least=2) -> None:
+                 offset: Sequence[int] = range(4),
+                 elements: Sequence[int] = range(1, 5),
+                 rect_rows: Sequence[int] = range(1, 5),
+                 works_at_least: int = 2,
+                 column_offset: int = 0) -> None:
         super().__init__(offset=offset, elements=elements, rect_rows=rect_rows, works_at_least=works_at_least)
         # 是否跟随偏移纵轴
         self.column_offset = column_offset
         self.max_execute_round = 10
 
-    def next_round_coord(self, offset, points, round_num) -> List[Coordinate]:
-        rect_cols = self.rect.cols
+    def next_round_coord(self, rect: Rectangle, points: Tuple[int], round_num: int) -> List[Coordinate]:
+        rect_cols = rect.cols
         coord = []
         for point in points:
-            row = offset + self.rect.rows * (round_num - 1) + point // rect_cols
-            col = self.rect.start_col + point % rect_cols + self.column_offset * (round_num - 1)
-            if col < self.rect.start_col or col > self.rect.start_col + self.rect.cols:
+            row = rect.offset + rect.rows * (round_num - 1) + point // rect_cols
+            col = rect.start_col + point % rect_cols + self.column_offset * (round_num - 1)
+            if col < rect.start_col or col > rect.start_col + rect.cols:
                 break
             coord.append(Coordinate(row=row, col='c{}'.format(col)))
         return coord
 
-    def execute_for_points(self, offset, points, feed: Feed):
+    def execute_for_points(self, rect: Rectangle, points: Tuple[int], feed: Feed) -> List[Round]:
+        offset = rect.offset
         round_list = []
         for round_num in range(1, self.max_execute_round + 1):
             coord_list = []
-            for coord in self.next_round_coord(offset, points, round_num=round_num):
+            for coord in self.next_round_coord(rect, points, round_num=round_num):
                 coord_list.append(coord)
             if len(coord_list) != len(points):
                 break

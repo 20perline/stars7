@@ -2,6 +2,7 @@ from loguru import logger
 from stars7.strategies import Strategy
 from stars7.printer import Printer
 from stars7.feed import Feed
+from stars7.database import Database
 from stars7.statistics import Statistics
 from stars7.updater import Updater
 from multiprocessing import Pool
@@ -39,13 +40,12 @@ class Engine(object):
 
     def execute(self, num=None):
         feed = Feed(num=num)
-        statistics = Statistics(analyze_mode=False)
+        database = Database()
         printer = Printer(feed=feed)
         for strategy in self.strategies:
             for pattern in strategy.execute(feed):
-                statistics.add_data(pattern)
+                database.save_pattern(pattern)
                 printer.do_print(pattern)
-        statistics.display_result()
 
     def analyze(self, num_count=2, process_count=None):
         start_time = time.perf_counter()

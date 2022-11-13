@@ -16,13 +16,11 @@ class Printer(object):
     def do_print(self, pattern: Pattern):
         if not settings.RENDER_ON:
             return False
-        if not pattern.predictable:
-            return False
         bg_path = settings.BG_PATH
         if not os.path.exists(bg_path):
             return False
-        rounds = len(pattern.round_list)
-        next_dir = '{}/data/{}/{}'.format(settings.ROOT_DIR, self.feed.next_num, str(rounds))
+        works = len(pattern.round_list) - 1
+        next_dir = '{}/data/{}/{}'.format(settings.ROOT_DIR, self.feed.next_num, str(works))
         if not os.path.exists(next_dir):
             os.makedirs(next_dir)
         signature = pattern.signature

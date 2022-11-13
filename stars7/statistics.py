@@ -45,7 +45,7 @@ class Statistics(object):
         strategy_works_num_counter[p_strategy] += 0
         strategy_works_num_counter[p_strategy + 'Total'] += 1
 
-        if pattern.predict_success:
+        if pattern.prediction_success:
             self.winning_tickets[p_num] = pattern.winning_ticket
             self.success_mask_by_num[p_num].add(p_mask)
             strategy_num_counter[p_strategy] += 1

@@ -1,13 +1,13 @@
 # 一对点
 from stars7.strategies import AssociatedRoundsStrategy
 from stars7.round import Round
-from typing import List
+from typing import List, Sequence
 
 
 class TwinsStrategy(AssociatedRoundsStrategy):
     """两个位置值相同"""
 
-    def __init__(self, offset, works_at_least=2) -> None:
+    def __init__(self, offset: Sequence[int] = range(4), works_at_least=2) -> None:
         super().__init__(offset=offset, elements=[2], works_at_least=works_at_least)
 
     def verify(self, round_list: List[Round]):
@@ -27,7 +27,7 @@ class TwinsStrategy(AssociatedRoundsStrategy):
 class OppositeStrategy(AssociatedRoundsStrategy):
     """两数成对数"""
 
-    def __init__(self, offset, works_at_least=2) -> None:
+    def __init__(self, offset: Sequence[int] = range(4), works_at_least=2) -> None:
         super().__init__(offset=offset, elements=[2], works_at_least=works_at_least)
 
     def verify(self, round_list: List[Round]):
