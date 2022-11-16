@@ -1,7 +1,7 @@
 
 class Coordinate(object):
 
-    def __init__(self, row: int, col: int) -> None:
+    def __init__(self, row: int, col: str) -> None:
         self.row = row
         self.col = col
 

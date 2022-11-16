@@ -1,17 +1,38 @@
+import json
 import sqlite3
+import numpy
+import pandas as pd
 from stars7 import settings
 from stars7.pattern import Pattern
-import pandas as pd
-import numpy
-import json
+from stars7.coordinate import Coordinate
+from stars7.round import Round
 
 
 class MyEncoder(json.JSONEncoder):
-
     def default(self, o):
         if isinstance(o, numpy.int64):
             return int(o)
         return o.__dict__
+
+
+def round_list_to_str(round_list):
+    return json.dumps(round_list, cls=MyEncoder).encode('utf8')
+
+
+def str_to_round_list(json_str):
+    round_list = []
+    for r in json.loads(json_str):
+        coord_list = []
+        for coord in r['coordinates']:
+            coord_list.append(Coordinate(coord['row'], coord['col']))
+        round = Round(r['round_num'], coord_list, r['values'], r['offset'])
+        round_list.append(round)
+    return round_list
+
+
+sqlite3.register_adapter(list, round_list_to_str)
+# RL = Round List
+sqlite3.register_converter('RL', str_to_round_list)
 
 
 class Database(object):
@@ -25,7 +46,9 @@ class Database(object):
 
     def __init__(self) -> None:
         if not self._initiated:
-            self.conn = sqlite3.connect(settings.DATABASE_PATH, check_same_thread=False)
+            self.conn = sqlite3.connect(settings.DATABASE_PATH,
+                                        check_same_thread=False,
+                                        detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES)
             self.conn.row_factory = sqlite3.Row
             self.cursor = self.conn.cursor()
             self.create_tables()
@@ -61,7 +84,7 @@ class Database(object):
             elements INTEGER,
             winning_ticket TEXT,
             works INTEGER,
-            round_list TEXT,
+            round_list RL,
             PRIMARY KEY(signature, prediction_num)
             )""")
 
@@ -76,10 +99,12 @@ class Database(object):
         self.conn.commit()
 
     def get_draw_data_frame(self):
-        return pd.read_sql_query('select * from lottery order by num desc', self.conn)
+        return pd.read_sql_query('select * from lottery order by num desc',
+                                 self.conn)
 
     def get_draw_data(self, total=30):
-        return self.cursor.execute('select * from lottery order by num desc').fetchmany(total)
+        return self.cursor.execute(
+            'select * from lottery order by num desc').fetchmany(total)
 
     def save_pattern(self, pattern: Pattern):
         model = {
@@ -92,15 +117,15 @@ class Database(object):
             'elements': len(pattern.round_list[0].values),
             'winning_ticket': pattern.winning_ticket,
             'works': len(pattern.round_list) - 1,
-            'round_list': json.dumps(pattern.round_list, cls=MyEncoder),
+            'round_list': pattern.round_list
         }
         self.cursor.execute(
-            """insert or ignore into pattern values(:signature, :prediction_num,
-                :prediction_mask, :prediction_success,
+            """insert or ignore into pattern values(:signature, :prediction_num, :prediction_mask, :prediction_success,
                 :strategy, :offset, :elements, :winning_ticket, :works, :round_list)
             """, model)
         self.conn.commit()
 
     def get_pattern_list(self, num, mask):
         return self.cursor.execute(
-            "select * from pattern where prediction_num = ? and prediction_mask = ?", (num, mask)).fetchall()
+            "select * from pattern where prediction_num = ? and prediction_mask = ?",
+            (num, mask)).fetchall()
