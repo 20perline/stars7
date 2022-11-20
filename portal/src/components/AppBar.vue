@@ -1,23 +1,10 @@
 <script setup>
-import { onMounted, reactive } from "vue";
-import http from "@/utils/http";
-
-defineProps({
-  title: {
-    type: String,
-    default: "Star7",
-  },
-});
+import { reactive } from "vue";
+import store from "@/store/index";
 
 const drawer = reactive({
   state: false,
   items: [],
-});
-
-onMounted(() => {
-  // http.get("/map.json").then((response) => {
-  //   drawer.items = response.data.items
-  // });
 });
 
 const toggle = function () {
@@ -26,17 +13,15 @@ const toggle = function () {
 </script>
 
 <template>
-  <!-- <v-card color="grey-lighten-4" flat height="48px" rounded="0"> -->
-    <!-- <v-toolbar density="compact"> -->
-      <v-app-bar :elevation="2" height="50px" class="bg-light-green-lighten-2">
-        <template v-slot:prepend>
-          <v-app-bar-nav-icon @click="toggle"></v-app-bar-nav-icon>
-        </template>
+  <v-app-bar :elevation="2" height="50px" class="bg-light-green-lighten-2">
+    <template v-slot:prepend>
+      <v-app-bar-nav-icon @click="toggle"></v-app-bar-nav-icon>
+    </template>
 
-        <v-app-bar-title>{{ title }}</v-app-bar-title>
-      </v-app-bar>
-    <!-- </v-toolbar> -->
-  <!-- </v-card> -->
+    <v-app-bar-title>
+      {{ store.num > 0 ? "第 " + store.num + " 期" : "Stars7" }}
+    </v-app-bar-title>
+  </v-app-bar>
 
   <v-navigation-drawer
     v-model="drawer.state"

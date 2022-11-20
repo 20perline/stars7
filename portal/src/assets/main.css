@@ -7,3 +7,12 @@
   padding-right: 0rem;
   font-weight: normal;
 }
+
+.Vue-Toastification__toast.app-toast {
+  min-height: 10px;
+  padding: 16px 24px;
+}
+
+.Vue-Toastification__toast-body.app-toast-body {
+  font-size: 10px;
+}

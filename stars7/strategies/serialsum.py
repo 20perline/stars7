@@ -47,7 +47,7 @@ class OddEvenSumStrategy(AssociatedRoundsStrategy):
         if len(round_list) != 5:
             return None
         sum_list = [sum(c.values) % 10 for i, c in enumerate(round_list) if i > 0]
-        if sum_list[0] == 0:
+        if sum_list[0] == 0 or sum_list[0] == 1:
             return None
         a = [0, 2, 4, 6, 8]
         if sum_list[0] % 2 != 0:

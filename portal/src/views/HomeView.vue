@@ -1,6 +1,10 @@
 <script setup>
 import { onMounted, nextTick, ref, reactive, computed } from "vue";
+import { useToast } from "vue-toastification";
 import http from "@/utils/http";
+import store from "@/store/index";
+
+const toast = useToast();
 
 //获取坐标函数
 function getAxisId(row, col) {
@@ -11,37 +15,19 @@ function getMaskInputId(index) {
   return "mi" + index;
 }
 
+function getPlaceholder(index) {
+  let names = ['千', '百', '十', '个'];
+  return names[index];
+}
+
 //主面板数据
 const num = ref(0);
 const drawTotal = ref(0);
 const drawItems = ref([]);
-const hitCells = reactive([]);
-const colors = [
-  "bg-yellow",
-  "bg-brown",
-  "bg-orange",
-  "bg-grey",
-  "bg-amber",
-  "bg-lime",
-];
-
-function resetAllHitCells() {
-  if (hitCells.length > 0) {
-    for (let cell of hitCells) {
-      for (let color of colors) {
-        cell.classList.remove(color);
-      }
-    }
-    hitCells.value = [];
-  }
-}
-
-function rememberHitCell(cell) {
-  hitCells.push(cell);
-}
 
 onMounted(() => {
   http.get("/home").then((response) => {
+    store.updateNum(response.data.num);
     num.value = response.data.num;
     drawTotal.value = response.data.total;
     drawItems.value = response.data.items;
@@ -51,67 +37,110 @@ onMounted(() => {
   });
 });
 
-// 输入框
-const maskInput = ref(["*", "*", "*", "*"]);
-const mask = computed(() => maskInput.value.join(""));
-
-function onMaskInputFocus(event) {
-  resetAllHitCells();
-  let idx = event.target.dataset.idx;
-  for (var i = 0; i < 4; i++) {
-    if (i != idx) {
-      let mInput = document.getElementById(getMaskInputId(i));
-      mInput.value = "";
-      maskInput.value[i] = "*";
-    }
-  }
-}
-
-function onMaskInputBlur(event) {
-  let idx = event.target.dataset.idx;
-  maskInput.value[idx] = event.target.value;
-}
-
-//查询结果数据
-const patterns = reactive({
-  viewIdx: -1,
+//负责显示结果集
+const indicator = reactive({
+  colors: [
+    "bg-yellow",
+    "bg-brown",
+    "bg-orange",
+    "bg-grey",
+    "bg-amber",
+    "bg-lime",
+  ],
   total: 0,
   items: [],
-  lastRoundPoints: [],
+  cells: [],
+  currentIndex: -1,
+
+  init(items) {
+    this.items = items;
+    this.total = this.items.length;
+    this.currentIndex = -1;
+    if (this.total > 0) {
+      this.showIndex(0);
+    }
+  },
+
+  reset() {
+    if (this.cells.length > 0) {
+      for (let cell of this.cells) {
+        for (let color of this.colors) {
+          cell.classList.remove(color);
+        }
+      }
+      this.cells = [];
+    }
+  },
+
+  showIndex(idx) {
+    if (idx < 0 || idx >= this.total) {
+      return;
+    }
+    this.reset();
+    let sign = this.items[idx].signature;
+    // toast.info(sign);
+    let round_list = this.items[idx].round_list;
+
+    for (var round = 0; round < round_list.length; round++) {
+      for (var ci in round_list[round].coordinates) {
+        let coord = round_list[round].coordinates[ci];
+        let cell = document.getElementById(getAxisId(coord.row, coord.col));
+        cell.classList.add(this.colors[round]);
+        this.cells.push(cell);
+      }
+    }
+    this.currentIndex = idx;
+  },
+
+  //没参数的绑定时带上括号 this拿得到值?
+  showNext() {
+    let idx = this.currentIndex + 1;
+    this.showIndex(idx);
+  },
+  showPrevious() {
+    let idx = this.currentIndex - 1;
+    this.showIndex(idx);
+  },
+
 });
 
-const hasNext = computed(
-  () => patterns.total > 0 && patterns.viewIdx < patterns.total
-);
-const hasPrevious = computed(() => patterns.total > 0 && patterns.viewIdx > 0);
+const hasNext = computed(() => indicator.total > 0 && indicator.currentIndex < indicator.total - 1);
+const hasPrevious = computed(() => indicator.total > 0 && indicator.currentIndex > 0);
 
-function queryPatterns() {
-  http.get("/patterns/" + num.value + "/" + mask.value).then((response) => {
-    patterns.total = response.data.total;
-    patterns.items = response.data.items;
-    viewNext(1);
-  });
-}
-
-function viewNext(direction) {
-  let idx = direction > 0 ? patterns.viewIdx + 1 : patterns.viewIdx - 1;
-  if (idx < 0 || idx >= patterns.total) {
-    return;
-  }
-  resetAllHitCells();
-  let round_list = patterns.items[idx].round_list;
-
-  for (var round = 0; round < round_list.length; round++) {
-    for (var ci in round_list[round].coordinates) {
-      let coord = round_list[round].coordinates[ci];
-      console.log(coord);
-      let cell = document.getElementById(getAxisId(coord.row, coord.col));
-      cell.classList.add(colors[round]);
-      rememberHitCell(cell);
+//有参数的函数绑定时不带括号，默认会以event作为第一个参数调用
+const assertion = reactive({
+  posValues: ["*", "*", "*", "*"],
+  check() {
+    let mask = this.posValues.join("");
+    if (mask === '****') {
+      toast.error('请先输入一位数字');
+      return;
     }
-  }
-  patterns.viewIdx = idx;
-}
+    if (mask.length > 4) {
+      toast.error('只能输入一位数字');
+      return;
+    }
+    http.get("/patterns/" + num.value + "/" + mask).then((response) => {
+      toast.success('共有' + response.data.total + '局')
+      indicator.init(response.data.items);
+    });
+  },
+  reset(event) {
+    indicator.reset();
+    let idx = event.target.dataset.idx;
+    for (var i = 0; i < 4; i++) {
+      if (i != idx) {
+        document.getElementById(getMaskInputId(i)).value = "";
+        this.posValues[i] = "*";
+      }
+    }
+  },
+  update(event) {
+    let idx = event.target.dataset.idx;
+    this.posValues[idx] = event.target.value;
+  },
+});
+
 </script>
 
 <template>
@@ -180,12 +209,12 @@ function viewNext(direction) {
           >
             <input
               type="number"
-              placeholder="*"
+              :placeholder="getPlaceholder(n - 2)"
               :id="getMaskInputId(n - 2)"
               class="d-flex h-100 w-100 text-center"
               :data-idx="n - 2"
-              @focus="onMaskInputFocus"
-              @blur="onMaskInputBlur"
+              @focus="assertion.reset"
+              @blur="assertion.update"
             />
           </v-sheet>
         </v-col>
@@ -200,19 +229,20 @@ function viewNext(direction) {
     </v-row>
 
     <div class="d-flex justify-space-between bg-light-green-lighten-5">
-      <v-btn class="ma-1" :disable="hasPrevious" @click="viewNext(-1)">
+      <v-btn class="ma-1" :disabled="!hasPrevious" @click="indicator.showPrevious()">
         <v-icon start icon="mdi-arrow-left"></v-icon>
         上一个
       </v-btn>
-      <v-btn class="ma-1" color="light-green" @click="queryPatterns">
+      <v-btn class="ma-1" color="light-green" @click="assertion.check()">
         <v-icon center icon="mdi-magnify"></v-icon>
         查询
       </v-btn>
-      <v-btn class="ma-1" :disable="hasNext" @click="viewNext(1)">
+      <v-btn class="ma-1" :disabled="!hasNext"  @click="indicator.showNext()">
         下一个
         <v-icon end icon="mdi-arrow-right"></v-icon>
       </v-btn>
     </div>
+
   </v-container>
 </template>
 
