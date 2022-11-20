@@ -18,7 +18,7 @@ const toggle = function () {
       <v-app-bar-nav-icon @click="toggle"></v-app-bar-nav-icon>
     </template>
 
-    <v-app-bar-title>
+    <v-app-bar-title class="text-body-2">
       {{ store.num > 0 ? "第 " + store.num + " 期" : "Stars7" }}
     </v-app-bar-title>
   </v-app-bar>

@@ -146,7 +146,7 @@ const assertion = reactive({
 <template>
   <v-container fluid class="pa-0">
     <template v-for="(draw, index) in drawItems">
-      <v-row no-gutters class="d-md-flex flex-row flex-nowrap text-center">
+      <v-row no-gutters class="d-md-flex flex-row flex-nowrap justify-center text-center">
         <v-col cols="2">
           <v-sheet
             elevation="1"
@@ -191,7 +191,7 @@ const assertion = reactive({
 
     <v-row
       no-gutters
-      class="d-md-flex flex-row flex-nowrap text-center"
+      class="d-md-flex flex-row flex-nowrap justify-center text-center"
       align="center"
     >
       <v-col cols="2">
