@@ -1,6 +1,7 @@
 import json
 import sqlite3
 import numpy
+import os
 import pandas as pd
 from stars7 import settings
 from stars7.pattern import Pattern
@@ -42,6 +43,8 @@ class Database(object):
     def __new__(cls, *args, **kwargs):
         if cls._instance is None:
             cls._instance = super(Database, cls).__new__(cls)
+        if not os.path.exists(settings.DATA_DIR):
+            os.mkdir(settings.DATA_DIR)
         return cls._instance
 
     def __init__(self) -> None:
