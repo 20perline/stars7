@@ -228,7 +228,7 @@ const assertion = reactive({
       </template>
     </v-row>
 
-    <div class="d-flex justify-space-between bg-light-green-lighten-5">
+    <div class="d-flex justify-space-between bg-light-green-lighten-5" v-if="num > 0">
       <v-btn class="ma-1" :disabled="!hasPrevious" @click="indicator.showPrevious()">
         <v-icon start icon="mdi-arrow-left"></v-icon>
         上一个

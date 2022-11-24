@@ -8,6 +8,8 @@ import os
 class Printer(object):
 
     def __init__(self, feed: Feed) -> None:
+        if not settings.RENDER_ON:
+            return False
         self.feed = feed
         self.font = ImageFont.truetype(settings.FONT_FILE, settings.FONT_SIZE)
         self.bold_font = ImageFont.truetype(settings.FONT_FILE, settings.BOLD_FONT_SIZE)
