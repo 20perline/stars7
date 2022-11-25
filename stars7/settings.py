@@ -10,7 +10,7 @@ DATABASE_PATH = os.path.join(DATA_DIR, 'stars7.db')
 BG_PATH = os.path.join(DATA_DIR, 'bg.png')
 
 # image settings
-RENDER_ON = False
+RENDER_ON = True
 H_PADDING = 20
 V_PADDING = 30
 # 边长
