@@ -12,4 +12,4 @@ class Round(object):
         self.offset = offset
 
     def __str__(self):
-        return "Round(num=%s, coordinates=%s, values=%s, offset=%s)" % (self.round_num, utils.list_to_str(self.coordinates), self.values, self.offset)
+        return "Round(num=%s, coordinates=%s, values=%s, ↑offset=%s)" % (self.round_num, utils.list_to_str(self.coordinates), self.values, self.offset)

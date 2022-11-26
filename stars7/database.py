@@ -123,7 +123,7 @@ class Database(object):
             'round_list': pattern.round_list
         }
         self.cursor.execute(
-            """insert or ignore into pattern values(:signature, :prediction_num, :prediction_mask, :prediction_success,
+            """replace into pattern values(:signature, :prediction_num, :prediction_mask, :prediction_success,
                 :strategy, :offset, :elements, :winning_ticket, :works, :round_list)
             """, model)
         self.conn.commit()

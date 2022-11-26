@@ -33,6 +33,6 @@ FIRST_Y = IMG_HEIGHT - V_PADDING - LINE_WIDTH - CELL_HALF_LEN
 WATERMARK_X = H_PADDING / 2
 WATERMARK_Y = IMG_HEIGHT - V_PADDING / 2
 
-FONT_FILE = os.path.join(os.path.dirname(__file__), 'arial.ttf')
+FONT_FILE = os.path.join(os.path.dirname(__file__), 'fonts', 'arial.ttf')
 FONT_SIZE = 18
 BOLD_FONT_SIZE = 28

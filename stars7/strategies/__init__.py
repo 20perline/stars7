@@ -64,11 +64,11 @@ class Strategy(metaclass=ABCMeta):
             for points in combinations(range(total_idx), elements):
                 yield points
 
-    def _coords_to_string(self, zero_round_coords: List[Coordinate]):
+    def get_signature(self, offset, zero_round_coords: List[Coordinate]):
         list1 = []
         for coord in zero_round_coords:
             list1.append(str(coord.row).replace('-', 'N') + coord.col)
-        return 'P' + (''.join(list1)).upper()
+        return self.get_name() + 'O' + str(offset) + (''.join(list1)).upper()
 
     def _execute(self, rect: Rectangle, feed: Feed):
         offset = rect.offset
@@ -77,7 +77,7 @@ class Strategy(metaclass=ABCMeta):
         for points in self.points_generator(rect):
             # duplicate filter
             zero_round_coords = self.next_round_coord(rect, points, 0)
-            signature = name + self._coords_to_string(zero_round_coords)
+            signature = self.get_signature(offset, zero_round_coords)
             if signature not in self.found_signatures:
                 self.found_signatures.add(signature)
             else:
@@ -111,7 +111,7 @@ class Strategy(metaclass=ABCMeta):
                 continue
             self._logger.debug(
                 "[{num}] {signature} rounds: \n{rounds}",
-                num=next_num, signature=signature, rounds=utils.list_to_str(round_list, join_str="\n"))
+                num=next_num, signature=signature, rounds=utils.list_to_str(reversed(round_list), join_str="\n"))
 
             round_list[0].values[predict_index] = predict_value
             actual_value = feed.get_next_value_at(predict_col_name)
